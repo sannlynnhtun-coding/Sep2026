@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Sep2026.ConsoleApp/Sep2026.ConsoleApp.csproj" />
+  <Project Path="Sep2026.ConsoleApp2/Sep2026.ConsoleApp2.csproj" Id="5a0ddc2e-1e55-4126-b7c5-a9176051d59f" />
+  <Project Path="Sep2026.ConsoleApp3/Sep2026.ConsoleApp3.csproj" Id="df5ddc8a-5a49-4053-9d9c-05ac8a1bff23" />
+</Solution>
