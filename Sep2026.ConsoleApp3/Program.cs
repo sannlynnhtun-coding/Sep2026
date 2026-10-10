@@ -27,11 +27,8 @@ switch (option)
         studentService.RegisterStudent(no, name, classNo);
 
         studentService.ShowStudents();
-        //Console.WriteLine("Student Registration selected.");
         break;
     case "2":
-        //Console.WriteLine("Grade Registration selected.");
-
         Console.Write("Please enter student no: ");
         string studentNo = Console.ReadLine();
 
