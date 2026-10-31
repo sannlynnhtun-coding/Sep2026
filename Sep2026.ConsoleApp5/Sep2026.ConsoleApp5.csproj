@@ -7,4 +7,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Sep2026.ConsoleApp5.Database\Sep2026.ConsoleApp5.Database.csproj" />
+  </ItemGroup>
+
 </Project>
