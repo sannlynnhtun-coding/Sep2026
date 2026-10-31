@@ -67,6 +67,8 @@ namespace Sep2026.ConsoleApp3
             if (table.Rows.Count == 0) Console.WriteLine("No grades found.");
             foreach (DataRow item in table.Rows)
             {
+                int id = Convert.ToInt32(item["GradeId"]);
+
                 Console.WriteLine($"Grade Id: {item["GradeId"]} | Student No: {item["No"]} | Name: {item["Name"]} | Subject: {item["Subject"]} | Mark: {item["Mark"]}");
 
             }

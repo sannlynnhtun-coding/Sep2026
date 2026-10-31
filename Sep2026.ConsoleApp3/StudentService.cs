@@ -50,6 +50,20 @@ namespace Sep2026.ConsoleApp3
                 Console.WriteLine($"Id: {item["Id"]} | No: {item["No"]} | Name: {item["Name"]} | ClassNo: {item["ClassNo"]}");
             }
             connection.Close();
+
+            List<StudentDto> students = new List<StudentDto>();
+
+            foreach (DataRow item in table.Rows)
+            {
+                StudentDto student = new StudentDto
+                {
+                    Id = Convert.ToInt32(item["Id"]),
+                    No = Convert.ToString(item["No"]),
+                    Name = Convert.ToString(item["Name"]),
+                    ClassNo = Convert.ToString(item["ClassNo"])
+                };
+                students.Add(student);
+            }
         }
 
         // UPDATE: change a student using their Id.
