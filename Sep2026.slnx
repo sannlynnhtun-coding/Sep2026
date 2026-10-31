@@ -4,4 +4,6 @@
   <Project Path="Sep2026.ConsoleApp2/Sep2026.ConsoleApp2.csproj" Id="5a0ddc2e-1e55-4126-b7c5-a9176051d59f" />
   <Project Path="Sep2026.ConsoleApp3/Sep2026.ConsoleApp3.csproj" Id="df5ddc8a-5a49-4053-9d9c-05ac8a1bff23" />
   <Project Path="Sep2026.ConsoleApp4/Sep2026.ConsoleApp4.csproj" Id="b74132de-3560-4a18-bf95-b397ab5e6ec3" />
+  <Project Path="Sep2026.ConsoleApp5.Database/Sep2026.ConsoleApp5.Database.csproj" Id="9db46fa9-6448-4acb-92f5-ceeb41ba4c39" />
+  <Project Path="Sep2026.ConsoleApp5/Sep2026.ConsoleApp5.csproj" Id="21b6e168-8f94-4a9b-bb5e-61f9e1c4f42f" />
 </Solution>
