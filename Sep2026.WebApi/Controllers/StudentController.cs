@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using Sep2026.ConsoleApp5.Database.AppDbContextModels;
 using Sep2026.WebApi.Models;
 
@@ -28,7 +29,7 @@ namespace Sep2026.WebApi.Controllers
         public IActionResult GetStudent(int id)
         {
             var item = _db.Students.FirstOrDefault(x => x.Id == id);
-            if(item is null)
+            if (item is null)
             {
                 return NotFound();
             }
@@ -69,11 +70,35 @@ namespace Sep2026.WebApi.Controllers
             return Ok(message);
         }
 
-        //[HttpPatch]
-        //public IActionResult UpdateStudent()
-        //{
-        //    return Ok("UpdateStudent");
-        //}
+        [HttpPatch("{id}")]
+        public IActionResult UpdateStudent(int id, StudentUpdateRequestModel requestModel)
+        {
+            var item = _db.Students.FirstOrDefault(x => x.Id == id);
+            if (item is null)
+            {
+                return NotFound();
+            }
+
+            if (requestModel.No != null && !requestModel.No.IsNullOrEmpty())
+            {
+                item.No = requestModel.No.Trim();
+            }
+
+            if (requestModel.ClassNo != null && !requestModel.ClassNo.IsNullOrEmpty())
+            {
+                item.ClassNo = requestModel.ClassNo.Trim();
+            }
+
+            if (requestModel.Name != null && !requestModel.Name.IsNullOrEmpty())
+            {
+                item.Name = requestModel.Name.Trim();
+            }
+
+            int result = _db.SaveChanges();
+            string message = result > 0 ? "Updating Successful." : "Updating Failed.";
+
+            return Ok(message);
+        }
 
         [HttpDelete("{id}")]
         public IActionResult DeleteStudent(int id)
