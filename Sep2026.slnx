@@ -12,4 +12,6 @@
   <Project Path="Sep2026.ProjectIdea1/Sep2026.ProjectIdea1.csproj" Id="46c2f53f-ebcd-4621-8f14-f9c198779ffb" />
   <Project Path="Sep2026.WebApi/Sep2026.WebApi.csproj" Id="f86b5941-3b5b-4788-b37a-a959feec321b" />
   <Project Path="Sep2026.WinFormsApp/Sep2026.WinFormsApp.csproj" Id="05a68eec-1614-43ae-9e5c-d413e7602178" />
+  <Project Path="Sep2026.SwanHtetSoe.RecipeAndPantryFinder.database/Sep2026.SwanHtetSoe.RecipeAndPantryFinder.database.csproj" />
+  <Project Path="Sep2026.SwanHtetSoe.RecipeAndPantryFinder/Sep2026.SwanHtetSoe.RecipeAndPantryFinder.csproj" />
 </Solution>
