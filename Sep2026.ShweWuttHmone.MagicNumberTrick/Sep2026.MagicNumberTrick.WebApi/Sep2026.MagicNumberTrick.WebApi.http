@@ -1,0 +1,47 @@
+@Sep2026_MagicNumberTrick_WebApi_HostAddress = https://localhost:7001
+
+### Get all seven cards
+GET {{Sep2026_MagicNumberTrick_WebApi_HostAddress}}/api/card
+Accept: application/json
+
+### Get one card
+GET {{Sep2026_MagicNumberTrick_WebApi_HostAddress}}/api/card/1
+Accept: application/json
+
+### Update Card 1 by CardId
+PATCH {{Sep2026_MagicNumberTrick_WebApi_HostAddress}}/api/card/1
+Content-Type: application/json
+
+{
+  "cardName": "Card 1"
+}
+
+### Delete a card by CardId
+DELETE {{Sep2026_MagicNumberTrick_WebApi_HostAddress}}/api/card/7
+
+### Create a card (CardNo must not already exist)
+POST {{Sep2026_MagicNumberTrick_WebApi_HostAddress}}/api/card
+Content-Type: application/json
+
+{
+  "cardNo": 7,
+  "keyValue": 56,
+  "cardName": "Card 7",
+  "numbers": [56, 57, 58, 59, 60]
+}
+
+### Reveal 50 (cards 1, 2, 3, 5, and 6 contain 50)
+POST {{Sep2026_MagicNumberTrick_WebApi_HostAddress}}/api/trick/reveal
+Content-Type: application/json
+
+{
+  "answers": [
+    { "cardNo": 1, "isNumberPresent": true },
+    { "cardNo": 2, "isNumberPresent": true },
+    { "cardNo": 3, "isNumberPresent": true },
+    { "cardNo": 4, "isNumberPresent": false },
+    { "cardNo": 5, "isNumberPresent": true },
+    { "cardNo": 6, "isNumberPresent": true },
+    { "cardNo": 7, "isNumberPresent": false }
+  ]
+}
