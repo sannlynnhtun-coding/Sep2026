@@ -36,7 +36,7 @@ namespace Sep2026.ClinicPatientRecord.API.Repositories
                 // Find the next available token number
                 string query = @"
                     SELECT ISNULL(MAX(TokenNumber), 0) + 1
-                    FROM dbo.Tokens
+                    FROM dbo.Tokens WITH (UPDLOCK, HOLDLOCK)
                     WHERE TokenDate = @TokenDate;
                 ";
 
