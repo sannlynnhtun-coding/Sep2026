@@ -1,0 +1,327 @@
+@Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress = http://localhost:5135
+
+### ===== Categories =====
+
+### Read all (200)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/categories
+Accept: application/json
+
+### Detail (200)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/categories/1
+Accept: application/json
+
+### Detail - not found (404)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/categories/999
+Accept: application/json
+
+### Create (200)
+POST {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/categories
+Content-Type: application/json
+
+{
+  "categoryName": "Health"
+}
+
+### Create - duplicate (409)
+POST {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/categories
+Content-Type: application/json
+
+{
+  "categoryName": "  transport  "
+}
+
+### Create - empty name (400)
+POST {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/categories
+Content-Type: application/json
+
+{
+  "categoryName": "   "
+}
+
+### Update (200)
+PUT {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/categories/4
+Content-Type: application/json
+
+{
+  "categoryName": "Movies & Fun"
+}
+
+### Update - duplicate (409)
+PUT {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/categories/4
+Content-Type: application/json
+
+{
+  "categoryName": "Shopping"
+}
+
+### Update - not found (404)
+PUT {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/categories/999
+Content-Type: application/json
+
+{
+  "categoryName": "Ghost"
+}
+
+### Delete - has active expenses (409)
+DELETE {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/categories/2
+
+### Delete - not found (404)
+DELETE {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/categories/999
+
+### ===== Expenses =====
+
+### Read all (200)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses
+Accept: application/json
+
+### Read by month (200)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses?year=2026&month=11
+Accept: application/json
+
+### Read by month - only year (400)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses?year=2026
+Accept: application/json
+
+### Read by month - invalid month (400)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses?year=2026&month=13
+Accept: application/json
+
+### Detail (200)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses/3
+Accept: application/json
+
+### Detail - not found (404)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses/999
+Accept: application/json
+
+### Create (200)
+POST {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "amount": 2500,
+  "expenseDate": "2026-11-10",
+  "note": "Tea shop"
+}
+
+### Create - amount 0 (400)
+POST {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "amount": 0,
+  "expenseDate": "2026-11-10"
+}
+
+### Create - missing date (400)
+POST {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "amount": 1000
+}
+
+### Create - future date (400)
+POST {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "amount": 1000,
+  "expenseDate": "2099-01-01"
+}
+
+### Create - deleted category (400)
+POST {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses
+Content-Type: application/json
+
+{
+  "categoryId": 3,
+  "amount": 1000,
+  "expenseDate": "2026-11-10"
+}
+
+### Update (200)
+PUT {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses/3
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "amount": 4000,
+  "expenseDate": "2026-11-14",
+  "note": "Mohinga + tea"
+}
+
+### Update - same values again (200, no changes)
+PUT {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses/3
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "amount": 4000,
+  "expenseDate": "2026-11-14",
+  "note": "Mohinga + tea"
+}
+
+### Update - not found (404)
+PUT {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses/999
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "amount": 1000,
+  "expenseDate": "2026-11-10"
+}
+
+### Delete - not found (404)
+DELETE {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses/999
+
+### Read by category (200)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses?categoryId=2
+Accept: application/json
+
+### Read by month + category (200)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses?year=2026&month=11&categoryId=2
+Accept: application/json
+
+### Read by category - no data (200, empty list)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/expenses?categoryId=999
+Accept: application/json
+
+### ===== Budgets =====
+
+### Read all (200)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/budgets
+Accept: application/json
+
+### Read by month (200)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/budgets?year=2026&month=11
+Accept: application/json
+
+### Read by month - only year (400)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/budgets?year=2026
+Accept: application/json
+
+### Detail (200)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/budgets/1
+Accept: application/json
+
+### Detail - not found (404)
+GET {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/budgets/999
+Accept: application/json
+
+### Create - Transport Nov 2026 (200)
+POST {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/budgets
+Content-Type: application/json
+
+{
+  "categoryId": 6,
+  "budgetYear": 2026,
+  "budgetMonth": 11,
+  "amount": 20000
+}
+
+### Create - same category and month again (409)
+POST {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/budgets
+Content-Type: application/json
+
+{
+  "categoryId": 6,
+  "budgetYear": 2026,
+  "budgetMonth": 11,
+  "amount": 99999
+}
+
+### Create - same category, different month (200)
+POST {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/budgets
+Content-Type: application/json
+
+{
+  "categoryId": 6,
+  "budgetYear": 2026,
+  "budgetMonth": 12,
+  "amount": 20000
+}
+
+### Create - amount 0 (400)
+POST {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/budgets
+Content-Type: application/json
+
+{
+  "categoryId": 6,
+  "budgetYear": 2027,
+  "budgetMonth": 1,
+  "amount": 0
+}
+
+### Create - invalid month (400)
+POST {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/budgets
+Content-Type: application/json
+
+{
+  "categoryId": 6,
+  "budgetYear": 2027,
+  "budgetMonth": 13,
+  "amount": 1000
+}
+
+### Create - deleted category (400)
+POST {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/budgets
+Content-Type: application/json
+
+{
+  "categoryId": 3,
+  "budgetYear": 2027,
+  "budgetMonth": 1,
+  "amount": 1000
+}
+
+### Update - Bus & Taxi Nov to 8,000 (200)
+PUT {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/budgets/2
+Content-Type: application/json
+
+{
+  "categoryId": 2,
+  "budgetYear": 2026,
+  "budgetMonth": 11,
+  "amount": 8000
+}
+
+### Update - same values again, own id excluded (200, no changes)
+PUT {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/budgets/2
+Content-Type: application/json
+
+{
+  "categoryId": 2,
+  "budgetYear": 2026,
+  "budgetMonth": 11,
+  "amount": 8000
+}
+
+### Update - move to Food & Drinks Nov, already has a budget (409)
+PUT {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/budgets/2
+Content-Type: application/json
+
+{
+  "categoryId": 1,
+  "budgetYear": 2026,
+  "budgetMonth": 11,
+  "amount": 8000
+}
+
+### Update - not found (404)
+PUT {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/budgets/999
+Content-Type: application/json
+
+{
+  "categoryId": 2,
+  "budgetYear": 2026,
+  "budgetMonth": 11,
+  "amount": 8000
+}
+
+### Delete - not found (404)
+DELETE {{Sep2026.AyeChan.ExpenseTracker.WebApi_HostAddress}}/api/budgets/999
