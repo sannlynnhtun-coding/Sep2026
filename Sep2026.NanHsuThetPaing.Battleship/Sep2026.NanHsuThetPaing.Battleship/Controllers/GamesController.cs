@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Sep2026.BattleShipWebApi.Models;
@@ -32,6 +33,7 @@ namespace Sep2026.BattleShipWebApi.Controllers
         [HttpPost]
         public IActionResult CreateGame()
         {
+            using var transaction = _db.Database.BeginTransaction();
             var game = new BattleshipGame
             {
                 Status = "Placing",
@@ -43,6 +45,7 @@ namespace Sep2026.BattleShipWebApi.Controllers
 
             _db.BattleshipShips.AddRange(PlaceShipsRandomly(game.GameId, isPlayerShip: false));
             _db.SaveChanges();
+            transaction.Commit();
 
             return CreatedAtAction(nameof(GetGame), new { id = game.GameId }, new
             {
@@ -60,6 +63,8 @@ namespace Sep2026.BattleShipWebApi.Controllers
         [HttpPost("{id}/ships")]
         public IActionResult PlaceShips(int id, PlaceShipsRequest requestModel)
         {
+            using var transaction = _db.Database.BeginTransaction();
+            _db.Database.ExecuteSqlInterpolated($"SELECT GameId FROM BattleshipGame WITH (UPDLOCK, HOLDLOCK) WHERE GameId = {id}");
             var game = _db.BattleshipGames.FirstOrDefault(x => x.GameId == id);
             if (game is null)
             {
@@ -119,6 +124,7 @@ namespace Sep2026.BattleShipWebApi.Controllers
             _db.BattleshipShips.AddRange(placed);
             game.Status = "Playing";
             _db.SaveChanges();
+            transaction.Commit();
 
             return Ok(new
             {
@@ -133,6 +139,8 @@ namespace Sep2026.BattleShipWebApi.Controllers
         [HttpPost("{id}/ships/random")]
         public IActionResult PlaceShipsRandom(int id)
         {
+            using var transaction = _db.Database.BeginTransaction();
+            _db.Database.ExecuteSqlInterpolated($"SELECT GameId FROM BattleshipGame WITH (UPDLOCK, HOLDLOCK) WHERE GameId = {id}");
             var game = _db.BattleshipGames.FirstOrDefault(x => x.GameId == id);
             if (game is null)
             {
@@ -148,6 +156,7 @@ namespace Sep2026.BattleShipWebApi.Controllers
             _db.BattleshipShips.AddRange(placed);
             game.Status = "Playing";
             _db.SaveChanges();
+            transaction.Commit();
 
             return Ok(new
             {
@@ -162,6 +171,8 @@ namespace Sep2026.BattleShipWebApi.Controllers
         [HttpPost("{id}/fire")]
         public IActionResult Fire(int id, FireRequest requestModel)
         {
+            using var transaction = _db.Database.BeginTransaction();
+            _db.Database.ExecuteSqlInterpolated($"SELECT GameId FROM BattleshipGame WITH (UPDLOCK, HOLDLOCK) WHERE GameId = {id}");
             var game = _db.BattleshipGames.FirstOrDefault(x => x.GameId == id);
             if (game is null)
             {
@@ -213,6 +224,7 @@ namespace Sep2026.BattleShipWebApi.Controllers
             {
                 game.Status = "Won";
                 _db.SaveChanges();
+                transaction.Commit();
 
                 return Ok(new
                 {
@@ -247,6 +259,7 @@ namespace Sep2026.BattleShipWebApi.Controllers
             }
 
             _db.SaveChanges();
+            transaction.Commit();
 
             string message = Describe("You", yourResult, yourHitShip) + " " +
                              Describe("Computer", computerResult, computerHitShip);
@@ -272,6 +285,8 @@ namespace Sep2026.BattleShipWebApi.Controllers
         [HttpGet("{id}")]
         public IActionResult GetGame(int id)
         {
+            using var transaction = _db.Database.BeginTransaction();
+            _db.Database.ExecuteSqlInterpolated($"SELECT GameId FROM BattleshipGame WITH (UPDLOCK, HOLDLOCK) WHERE GameId = {id}");
             var game = _db.BattleshipGames.FirstOrDefault(x => x.GameId == id);
             if (game is null)
             {
@@ -285,6 +300,7 @@ namespace Sep2026.BattleShipWebApi.Controllers
             var playerShips = ships.Where(s => s.IsPlayerShip).ToList();
             bool finished = game.Status == "Won" || game.Status == "Lost" || game.Status == "GaveUp";
 
+            transaction.Commit();
             return Ok(new
             {
                 gameId = game.GameId,
@@ -307,6 +323,8 @@ namespace Sep2026.BattleShipWebApi.Controllers
         [HttpPut("{id}/restart")]
         public IActionResult Restart(int id)
         {
+            using var transaction = _db.Database.BeginTransaction();
+            _db.Database.ExecuteSqlInterpolated($"SELECT GameId FROM BattleshipGame WITH (UPDLOCK, HOLDLOCK) WHERE GameId = {id}");
             var game = _db.BattleshipGames.FirstOrDefault(x => x.GameId == id);
             if (game is null)
             {
@@ -323,6 +341,7 @@ namespace Sep2026.BattleShipWebApi.Controllers
             _db.BattleshipShips.AddRange(PlaceShipsRandomly(id, isPlayerShip: false));
 
             _db.SaveChanges();
+            transaction.Commit();
 
             return Ok(new
             {
@@ -338,6 +357,8 @@ namespace Sep2026.BattleShipWebApi.Controllers
         [HttpPatch("{id}/give-up")]
         public IActionResult GiveUp(int id)
         {
+            using var transaction = _db.Database.BeginTransaction();
+            _db.Database.ExecuteSqlInterpolated($"SELECT GameId FROM BattleshipGame WITH (UPDLOCK, HOLDLOCK) WHERE GameId = {id}");
             var game = _db.BattleshipGames.FirstOrDefault(x => x.GameId == id);
             if (game is null)
             {
@@ -355,6 +376,7 @@ namespace Sep2026.BattleShipWebApi.Controllers
             var computerShips = _db.BattleshipShips.Where(x => x.GameId == id && !x.IsPlayerShip).ToList();
             var yourShots = _db.BattleshipShots.Where(x => x.GameId == id && !x.ByComputer).ToList();
 
+            transaction.Commit();
             return Ok(new
             {
                 gameId = id,

@@ -117,7 +117,8 @@ namespace Sep2026.ReaderClub.WebApi.Controllers
 
             // Get associated BookReview records
             var bookReviews = _db.BookReviews
-                .Where(x => bookReviewIds.Contains(x.BookReviewId))
+                .Where(x => bookReviewIds.Contains(x.BookReviewId) &&
+                    !_db.Reviews.Any(r => r.BookReviewId == x.BookReviewId && r.ReviewerId != id))
                 .ToList();
 
             // Delete Review records

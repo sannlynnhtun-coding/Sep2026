@@ -82,6 +82,9 @@ namespace Sep2026.Thazineihlaing.PersonalityTest.Webapi.Controllers
             if (question is null)
             { return NotFound(); }
 
+            if (_db.AnswerOptions.Any(x => x.QuestionId == id) || _db.UserAnswers.Any(x => x.QuestionId == id))
+                return Conflict("Question has answer options or recorded answers.");
+
             _db.Questions.Remove(question);
             int result = _db.SaveChanges();
             string message = result > 0 ? "Deleting successful" : "Deleting Fail";

@@ -43,10 +43,11 @@ namespace Sep2026.GameShopWebApi.Controllers
         [HttpPost]
         public IActionResult CreateGame(GamesModel.CreateRequest createRequest)
         {
+            using var transaction = _db.BeginSchedulingTransaction();
             if (createRequest == null)
                 return BadRequest("Must define a body");
 
-            if (string.IsNullOrEmpty(createRequest.Title))
+            if (string.IsNullOrWhiteSpace(createRequest.Title))
                 return BadRequest("Game title must be defined");
 
             if (createRequest.TotalStock < 1)
@@ -55,14 +56,14 @@ namespace Sep2026.GameShopWebApi.Controllers
             // validate category if provided
             if (createRequest.CategoryId.HasValue)
             {
-                var validCategory = _db.ConsoleCategories.FirstOrDefault(c => c.Id == createRequest.CategoryId.Value);
+                var validCategory = _db.ConsoleCategories.FirstOrDefault(c => c.Id == createRequest.CategoryId.Value && !c.IsDeleted);
                 if (validCategory == null)
                     return BadRequest($"Invalid Category Id {createRequest.CategoryId}");
             }
 
             var newGame = new Game
             {
-                Title = createRequest.Title,
+                Title = createRequest.Title.Trim(),
                 CategoryId = createRequest.CategoryId,
                 TotalStock = createRequest.TotalStock,
                 AvailableStock = createRequest.TotalStock,
@@ -71,6 +72,7 @@ namespace Sep2026.GameShopWebApi.Controllers
 
             _db.Games.Add(newGame);
             int status = _db.SaveChanges();
+            transaction.Commit();
 
             return status > 0 ? Ok(_modelConverter.ConvertGameResponse(newGame)) : BadRequest("Failed to create game");
         }
@@ -88,36 +90,29 @@ namespace Sep2026.GameShopWebApi.Controllers
                 return NotFound($"Game with Id {id} doesn't exist.");
 
             // update title
-            if (!string.IsNullOrEmpty(updateRequest.Title))
+            if (updateRequest.Title != null)
             {
-                targetGame.Title = updateRequest.Title;
+                if (string.IsNullOrWhiteSpace(updateRequest.Title))
+                    return BadRequest("Game title cannot be whitespace.");
+                targetGame.Title = updateRequest.Title.Trim();
             }
 
             // update category
             if (updateRequest.CategoryId.HasValue)
             {
-                var validCategory = _db.ConsoleCategories.FirstOrDefault(c => c.Id == updateRequest.CategoryId.Value);
-                if (validCategory != null)
-                {
-                    targetGame.CategoryId = validCategory.Id;
-                }
+                var validCategory = _db.ConsoleCategories.FirstOrDefault(c => c.Id == updateRequest.CategoryId.Value && !c.IsDeleted);
+                if (validCategory == null)
+                    return BadRequest("Invalid Category Id.");
+                targetGame.CategoryId = validCategory.Id;
             }
 
-            // update total stock
-            if (updateRequest.TotalStock.HasValue && updateRequest.TotalStock.Value >= 0)
-            {
-                targetGame.TotalStock = updateRequest.TotalStock.Value;
-            }
-            
-
-            // update available stock
-            if (updateRequest.AvailableStock.HasValue && updateRequest.AvailableStock.Value >= 0)
-            {
-                if (updateRequest.TotalStock.HasValue && updateRequest.AvailableStock.Value > updateRequest.TotalStock.Value)
-                    return BadRequest("Please check your available stock number.");
-                
-                targetGame.AvailableStock = updateRequest.AvailableStock.Value;
-            }
+            int totalStock = updateRequest.TotalStock ?? targetGame.TotalStock;
+            int availableStock = updateRequest.AvailableStock ?? targetGame.AvailableStock;
+            int reservedStock = _db.GameSessions.Count(session => session.GameId == id && !session.IsDeleted);
+            if (totalStock < reservedStock || availableStock < 0 || availableStock > totalStock - reservedStock)
+                return BadRequest("Stock must cover active sessions and cannot exceed total stock.");
+            targetGame.TotalStock = totalStock;
+            targetGame.AvailableStock = availableStock;
 
             int status = _db.SaveChanges();
             transaction.Commit();
@@ -134,7 +129,7 @@ namespace Sep2026.GameShopWebApi.Controllers
                 return NotFound($"Game with Id {id} doesn't exist.");
 
             //block delete if child exist.
-            bool isSessionExist = _db.GameSessions.Any(s => s.GameId == id && s.IsDeleted == false);
+            bool isSessionExist = _db.GameSessions.Any(s => s.GameId == id && (isHardDelete || !s.IsDeleted));
 
             if (isSessionExist)
                 return BadRequest($"Game '{targetGame.Title}' has game session. Try to move or delete them first.");

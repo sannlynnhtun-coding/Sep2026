@@ -1,4 +1,6 @@
-﻿using System.Security.Permissions;
+using System.ComponentModel.DataAnnotations;
+
+using System.Security.Permissions;
 
 namespace Sep2026.GameShopWebApi.Models
 {
@@ -13,13 +15,18 @@ namespace Sep2026.GameShopWebApi.Models
         }
         public class CreateRequest
         {
+            [Required]
+            [StringLength(50)]
             public string? Name { get; set; }
+            [Range(typeof(decimal), "5000", "9999999999999999.99")]
             public decimal HourlyPrice { get; set; }
 
         }
         public class UpdateRequest 
         {
+            [StringLength(50, MinimumLength = 1)]
             public string? Name { get; set; }
+            [Range(typeof(decimal), "5000", "9999999999999999.99")]
             public decimal? HourlyPrice { get; set; }
         }
     }

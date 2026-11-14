@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Sep2026.NanHsuThetPaing.Battleship/Sep2026.NanHsuThetPaing.Battleship/Sep2026.NanHsuThetPaing.Battleship.csproj" />
+    <ProjectReference Include="../../Sep2026.WaiYanLin.ReaderClub/Sep2026.WaiYanLin.ReaderClub.WebApi/Sep2026.WaiYanLin.ReaderClub.WebApi.csproj" />
+    <ProjectReference Include="../../Sep2026.EaintMhueSan.ClinicPatientRecord/Sep2026.ClinicPatientRecord/Sep2026.ClinicPatientRecord.API.csproj" />
+    <ProjectReference Include="../../Sep2026.ShweWuttHmone.MagicNumberTrick/Sep2026.MagicNumberTrick.WebApi/Sep2026.MagicNumberTrick.WebApi.csproj" />
+    <ProjectReference Include="../../Sep2026.Thazineihlaing.PersonalityTest.Webapi/Sep2026.Thazineihlaing.PersonalityTest.Webapi.csproj" />
+    <ProjectReference Include="../../Sep2026.Panyooneain_Movie Watchlist System/Sep2026.Panyooneain_Movie Watchlist System.csproj" />
+  </ItemGroup>
+</Project>

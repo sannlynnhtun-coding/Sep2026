@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Client;
 using Microsoft.EntityFrameworkCore;
@@ -43,14 +43,14 @@ namespace Sep2026.GameShopWebApi.Controllers
         {
             if (createRequest == null) { return BadRequest("Must define a body"); }
 
-            if (string.IsNullOrEmpty(createRequest.Name)) { return BadRequest("Category's name must be defined"); }
+            if (string.IsNullOrWhiteSpace(createRequest.Name)) { return BadRequest("Category's name must be defined"); }
 
             if (createRequest.HourlyPrice < 5000m) { return BadRequest("Hourly price should have minimum 5000mmk"); }
 
             var newCategory = new ConsoleCategory
             {
                 HourlyRate = createRequest.HourlyPrice,
-                Name = createRequest.Name,
+                Name = createRequest.Name.Trim(),
                 IsDeleted = false,
             };
 
@@ -64,21 +64,26 @@ namespace Sep2026.GameShopWebApi.Controllers
         [HttpPatch("{id}")]
         public IActionResult UpdateCategory(int id, ConsoleCategoryModel.UpdateRequest updateRequest)
         {
+            using var transaction = _db.BeginSchedulingTransaction();
             
             var targetCategory = _db.ConsoleCategories.FirstOrDefault(c => c.Id == id);
 
             if (targetCategory == null) { return NotFound("Console category with this Id doesn't exsit"); }
 
-            if (!string.IsNullOrEmpty(updateRequest.Name)) {
-                targetCategory.Name = updateRequest.Name;
+            if (updateRequest.Name != null) {
+                if (string.IsNullOrWhiteSpace(updateRequest.Name))
+                    return BadRequest("Category name cannot be whitespace.");
+                targetCategory.Name = updateRequest.Name.Trim();
             }
 
-            if (updateRequest.HourlyPrice.HasValue && updateRequest.HourlyPrice.Value > 5000m) {
-                
-                targetCategory.HourlyRate = updateRequest.HourlyPrice.Value;                
+            if (updateRequest.HourlyPrice.HasValue) {
+                if (updateRequest.HourlyPrice.Value < 5000m)
+                    return BadRequest("Hourly price should have minimum 5000mmk");
+                targetCategory.HourlyRate = updateRequest.HourlyPrice.Value;
             }
 
             int status = _db.SaveChanges();
+            transaction.Commit();
             return status > 0 ? Ok(_modelConverter.ConvertConsoleCategoryResponse(targetCategory)) : BadRequest("Fail to update.");
 
         }
@@ -86,12 +91,13 @@ namespace Sep2026.GameShopWebApi.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeleteCategory(int id, [FromQuery] bool isHardDelete = false)
         {
+            using var transaction = _db.BeginSchedulingTransaction();
             var targetCategory = _db.ConsoleCategories.FirstOrDefault(c => c.Id == id);
             if (targetCategory == null) return NotFound("Category with this Id doesn't exsit");
 
             //block delete
-            bool isConsoleExist = _db.GameConsoles.Any(console => console.CategoryId == targetCategory.Id && console.IsDeleted == false);
-            bool isGameExist = targetCategory.Games.Any(game => game.CategoryId == targetCategory.Id && game.IsDeleted == false);
+            bool isConsoleExist = _db.GameConsoles.Any(console => console.CategoryId == targetCategory.Id && (isHardDelete || !console.IsDeleted));
+            bool isGameExist = _db.Games.Any(game => game.CategoryId == targetCategory.Id && (isHardDelete || !game.IsDeleted));
 
             if (isConsoleExist || isGameExist)
             {
@@ -113,6 +119,7 @@ namespace Sep2026.GameShopWebApi.Controllers
             }
 
             int status = _db.SaveChanges();
+            transaction.Commit();
             return status > 0 ? Ok("Successfully deleted") : BadRequest("Fail to delete");
 
         }

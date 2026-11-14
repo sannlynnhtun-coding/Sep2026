@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Sep2026.GameShopWebApi.Models
 {
     public class GamesModel
@@ -14,16 +16,24 @@ namespace Sep2026.GameShopWebApi.Models
 
         public class CreateRequest
         {
+            [Required]
+            [StringLength(150)]
             public string? Title { get; set; }
+            [Range(1, int.MaxValue)]
             public int? CategoryId { get; set; }
+            [Range(1, int.MaxValue)]
             public int TotalStock { get; set; }
         }
 
         public class UpdateRequest
         {
+            [StringLength(150, MinimumLength = 1)]
             public string? Title { get; set; }
+            [Range(1, int.MaxValue)]
             public int? CategoryId { get; set; }
+            [Range(0, int.MaxValue)]
             public int? TotalStock { get; set; }
+            [Range(0, int.MaxValue)]
             public int? AvailableStock { get; set; }
         }
     }

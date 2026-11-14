@@ -65,6 +65,19 @@ try
     Assert((string)(await new SqlCommand("SELECT AnswerResult FROM Project1Answer", db).ExecuteScalarAsync())! == payload,
         "Importer did not preserve literal input.");
     Assert(await Count("Students") == 1, "Importer executed the injection payload.");
+    await new SqlCommand("ALTER TABLE Project1Answer ADD CONSTRAINT CK_TestAnswerNumber CHECK (AnswerNo > 0)", db).ExecuteNonQueryAsync();
+    await File.WriteAllTextAsync(fixture, JsonSerializer.Serialize(new { answers = new[]
+    {
+        new { questionNo = 2, answerNo = 1, answerResult = "valid" },
+        new { questionNo = 2, answerNo = -1, answerResult = "invalid" }
+    } }));
+    using var failedImport = Process.Start(start)!;
+    var failedOutput = failedImport.StandardOutput.ReadToEndAsync();
+    var failedErrors = failedImport.StandardError.ReadToEndAsync();
+    await failedImport.WaitForExitAsync();
+    await Task.WhenAll(failedOutput, failedErrors);
+    Assert(failedImport.ExitCode != 0 && await Count("Project1Answer") == 1, "Failed importer batch left partial data.");
+
 
     var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
     {
@@ -104,6 +117,26 @@ try
     Assert(await diagnostic.TestConnection(new TestEnvironment()) is NotFoundResult, "Production diagnostic must be hidden.");
     await new SqlCommand("CREATE TABLE Recipes (RecipeId int IDENTITY PRIMARY KEY, Title nvarchar(200), Instructions nvarchar(max), ReadyInMinutes int, Servings int); CREATE TABLE RecipeIngredients (Id int IDENTITY PRIMARY KEY, RecipeId int REFERENCES Recipes(RecipeId), IngredientName nvarchar(100), Amount decimal(10,2), Unit nvarchar(50));", db).ExecuteNonQueryAsync();
     await PersonalitySmoke.Run(connectionString);
+    await new SqlCommand("INSERT PantryItems VALUES (2, ' ', 0, 'cup'); DELETE PantryItems WHERE PantryItemId = 1;", db).ExecuteNonQueryAsync();
+    var localRecipes = new RecipeService(pantry);
+    int emptyPantryCalls = handler.RequestCount;
+    Assert((await localRecipes.SearchRecipesByPantryAsync()).Count == 0 && (await recipes.SearchRecipesByPantryAsync()).Count == 0 && handler.RequestCount == emptyPantryCalls,
+        "Blank-only pantry must return no matches without an upstream request.");
+    await new SqlCommand("INSERT PantryItems VALUES (1, 'pasta', 1, 'cup')", db).ExecuteNonQueryAsync();
+    await new SqlCommand("DECLARE @recipeId int; INSERT Recipes (Title, Instructions, ReadyInMinutes, Servings) VALUES ('Rice dish', 'Cook', 1, 1); SET @recipeId = SCOPE_IDENTITY(); INSERT RecipeIngredients VALUES (@recipeId, 'RICE', 1, 'cup'); UPDATE PantryItems SET ItemName = 'rice' WHERE PantryItemId = 1;", db).ExecuteNonQueryAsync();
+    pantry.ChangeTracker.Clear();
+    var originalCulture = System.Globalization.CultureInfo.CurrentCulture;
+    try
+    {
+        System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("tr-TR");
+        Assert((await localRecipes.SearchRecipesByPantryAsync()).Single().MatchedIngredientCount == 1, "Pantry matching depended on current culture.");
+    }
+    finally
+    {
+        System.Globalization.CultureInfo.CurrentCulture = originalCulture;
+    }
+    await new SqlCommand("DELETE RecipeIngredients; DELETE Recipes; UPDATE PantryItems SET ItemName = 'pasta' WHERE PantryItemId = 1;", db).ExecuteNonQueryAsync();
+
     await HttpSmoke.Run(connectionString);
     await HttpSmoke.Run(connectionString, useHttps: true);
     Console.WriteLine("PASS: SQL injection payloads, importer, recipe credential transport/errors, production diagnostic.");

@@ -14,7 +14,12 @@ public class AppDbContext : DbContext
     public virtual DbSet<MagicNumberCard> MagicNumberCards { get; set; }
     public virtual DbSet<MagicNumberCardItem> MagicNumberCardItems { get; set; }
 
-     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)        => optionsBuilder.UseSqlServer("Server=.;Database=sep_2026; ?? ;TrustServerCertificate=True;");
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        if (!optionsBuilder.IsConfigured)
+            optionsBuilder.UseSqlServer(Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+                ?? "Server=.;Database=sep_2026;Integrated Security=True;TrustServerCertificate=True;");
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

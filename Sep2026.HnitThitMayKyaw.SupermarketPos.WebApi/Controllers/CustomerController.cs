@@ -44,6 +44,7 @@ namespace Sep2026.HnitThitMayKyaw.SupermarketPos.WebApi.Controllers
                 FirstName = requestModel.FirstName,
                 LastName = requestModel.LastName,
                 Email = requestModel.Email,
+                Phone = requestModel.Phone,
                 DeleteFlag = false,
                 CreatedAtUtc = DateTime.UtcNow,
             });
@@ -64,6 +65,7 @@ namespace Sep2026.HnitThitMayKyaw.SupermarketPos.WebApi.Controllers
             customer.FirstName = requestModel.FirstName;
             customer.LastName = requestModel.LastName;
             customer.Email = requestModel.Email;
+            customer.Phone = requestModel.Phone;
             
             int result = _db.SaveChanges();
             string message = result > 0 ? "Update successful" : "Update failed";
@@ -79,7 +81,7 @@ namespace Sep2026.HnitThitMayKyaw.SupermarketPos.WebApi.Controllers
                 return NotFound();
             }
             
-            _db.Customers.Remove(customer);
+            customer.DeleteFlag = true;
             int result = _db.SaveChanges();
             string message = result > 0 ? "Delete successful" : "Delete failed";
             return Ok(message);

@@ -77,7 +77,7 @@ namespace Sep2026.HnitThitMayKyaw.SupermarketPos.WebApi.Controllers
                 return NotFound();
             }
             
-            _db.Categories.Remove(category);
+            category.DeleteFlag = true;
             int result = _db.SaveChanges();
             string message = result > 0 ? "Delete successful" : "Delete failed";
             return Ok(message);

@@ -84,6 +84,9 @@ namespace Sep2026.GameShopWebApi.Controllers
                 return BadRequest("Invalid booking ID.");
             if (createRequest.PaidAmount < 0)
                 return BadRequest("Paid amount cannot be negative.");
+            decimal paidAmount = decimal.Round(createRequest.PaidAmount, 2, MidpointRounding.AwayFromZero);
+            if (paidAmount > 9999999999999999.99m)
+                return BadRequest("Paid amount exceeds the supported limit.");
 
             //check booking if user provide bookingId value ( allowed null )
             //note : owner doesn't care about late, the endTime will be the same as booked endTme.
@@ -107,7 +110,7 @@ namespace Sep2026.GameShopWebApi.Controllers
                     return BadRequest($"Booking with Id {createRequest.BookingId} didn't register game console ( {reqConsole.ConsoleNumber} )");
 
                 //check if costumer arrived earlier than book starttime.Owner will ask them to wait.
-                if (createRequest.StartTime.Value < reqBooking.StartTime.AddMinutes(-5))
+                if (reqBooking.StartTime - createRequest.StartTime.Value > TimeSpan.FromMinutes(5))
                     return BadRequest($"Current session startTime is earlier than booked startTime.");
 
                 //check if costumer arrived after the endTime.
@@ -115,7 +118,7 @@ namespace Sep2026.GameShopWebApi.Controllers
                     return BadRequest($"This session is  already expire");
 
                 //check totalAmount vs depositAmount
-                var totalPaidAmount = createRequest.PaidAmount + reqBooking.DepositAmount;
+                var totalPaidAmount = paidAmount + reqBooking.DepositAmount;
                 if (totalPaidAmount < reqBooking.TotalAmount)
                     return BadRequest($"Insufficent amount.Required amount is {reqBooking.TotalAmount - totalPaidAmount}mmk.");
 
@@ -129,7 +132,7 @@ namespace Sep2026.GameShopWebApi.Controllers
                 reqBooking.BookingStatus = "Completed";
                 reqBooking.UpdatedAt = DateTime.Now;
 
-                createRequest.PaidAmount = totalPaidAmount;
+                paidAmount = totalPaidAmount;
                 createRequest.EndTime = reqBooking.EndTime;// to make sure the booking endtime is the same. 
 
             }
@@ -184,11 +187,15 @@ namespace Sep2026.GameShopWebApi.Controllers
             //calculate totalhours and total amount for both type of customer
             TimeSpan sessionDuration = createRequest.EndTime.Value - createRequest.StartTime.Value;
             decimal totalHours = (decimal) sessionDuration.TotalHours;
+            if (decimal.Round(totalHours, 2, MidpointRounding.AwayFromZero) > 99.99m)
+                return BadRequest("Duration exceeds the supported 99.99 hours.");
             
             if (!isBooking)
             {
-                totalAmount = reqConsole.Category.HourlyRate * totalHours;
+                totalAmount = decimal.Round(reqConsole.Category.HourlyRate * totalHours, 2, MidpointRounding.AwayFromZero);
             }
+            if (totalAmount > 9999999999999999.99m)
+                return BadRequest("Total amount exceeds the supported limit.");
             reqConsole.CurrentStatus = "Taken";
             if (reqGame != null)
                 reqGame.AvailableStock--;
@@ -201,7 +208,7 @@ namespace Sep2026.GameShopWebApi.Controllers
                 GameId = createRequest.GameId.HasValue ? createRequest.GameId.Value : null,
                 TotalHours = totalHours,
                 TotalAmount = totalAmount,
-                PaidAmount = createRequest.PaidAmount,
+                PaidAmount = paidAmount,
                 StartTime = createRequest.StartTime.Value,
                 EndTime = createRequest.EndTime.Value,
                 IsDeleted = false,
@@ -301,6 +308,8 @@ namespace Sep2026.GameShopWebApi.Controllers
                 // Recalculate duration, totalHours, and totalAmount
                 TimeSpan duration = newEndTime - newStartTime;
                 decimal totalHours = (decimal)duration.TotalHours;
+                if (decimal.Round(totalHours, 2, MidpointRounding.AwayFromZero) > 99.99m)
+                    return BadRequest("Duration exceeds the supported 99.99 hours.");
 
                 decimal? hourlyRate = _db.GameConsoles
                     .Include(c => c.Category)
@@ -310,7 +319,10 @@ namespace Sep2026.GameShopWebApi.Controllers
                     return NotFound("Invalid console category");
 
                 targetSession.TotalHours = totalHours;
-                targetSession.TotalAmount = totalHours * hourlyRate.Value;
+                decimal totalAmount = decimal.Round(totalHours * hourlyRate.Value, 2, MidpointRounding.AwayFromZero);
+                if (totalAmount > 9999999999999999.99m)
+                    return BadRequest("Total amount exceeds the supported limit.");
+                targetSession.TotalAmount = totalAmount;
                 hasChanges = true;
             }
 
@@ -320,7 +332,10 @@ namespace Sep2026.GameShopWebApi.Controllers
                 if (updateRequest.PaidAmount.Value < 0)
                     return BadRequest("Paid amount cannot be negative.");
 
-                targetSession.PaidAmount = updateRequest.PaidAmount.Value;
+                decimal paidAmount = decimal.Round(updateRequest.PaidAmount.Value, 2, MidpointRounding.AwayFromZero);
+                if (paidAmount > 9999999999999999.99m)
+                    return BadRequest("Paid amount exceeds the supported limit.");
+                targetSession.PaidAmount = paidAmount;
                 hasChanges = true;
             }
 

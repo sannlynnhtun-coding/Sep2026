@@ -120,14 +120,12 @@ public class RecipeService : IRecipeService
     {
         var pantryItems = await _db.PantryItems.ToListAsync();
 
-        if (pantryItems.Count == 0)
-        {
-            throw new InvalidOperationException(
-                "Pantry is empty. Please add items to your pantry first.");
-        }
         var pantryNames = pantryItems
-            .Select(p => p.ItemName.Trim().ToLower())
+            .Where(p => !string.IsNullOrWhiteSpace(p.ItemName))
+            .Select(p => p.ItemName.Trim())
             .ToList();
+        if (pantryNames.Count == 0)
+            return [];
 
         var allRecipes = await _db.Recipes
             .Include(r => r.RecipeIngredients)
@@ -137,14 +135,15 @@ public class RecipeService : IRecipeService
             .Select(r =>
             {
                 var ingredientNames = r.RecipeIngredients
-                    .Select(i => i.IngredientName.Trim().ToLower())
+                    .Where(i => !string.IsNullOrWhiteSpace(i.IngredientName))
+                    .Select(i => i.IngredientName.Trim())
                     .ToList();
 
                 var matchedCount = ingredientNames
-                    .Count(name => pantryNames.Any(p => name.Contains(p) || p.Contains(name)));
+                    .Count(name => pantryNames.Any(p => name.Contains(p, StringComparison.OrdinalIgnoreCase) || p.Contains(name, StringComparison.OrdinalIgnoreCase)));
 
                 var missingIngredients = ingredientNames
-                    .Where(name => !pantryNames.Any(p => name.Contains(p) || p.Contains(name)))
+                    .Where(name => !pantryNames.Any(p => name.Contains(p, StringComparison.OrdinalIgnoreCase) || p.Contains(name, StringComparison.OrdinalIgnoreCase)))
                     .ToList();
 
                 return new RecipeSearchResponseModel

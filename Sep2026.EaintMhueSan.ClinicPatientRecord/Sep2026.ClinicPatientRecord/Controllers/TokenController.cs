@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 ﻿using Microsoft.AspNetCore.Mvc;
 using Sep2026.ClinicPatientRecord.API.Dto;
 using Sep2026.ClinicPatientRecord.API.Service;
@@ -36,6 +37,10 @@ namespace Sep2026.ClinicPatientRecord.API.Controllers
                     doctorID = token.DoctorID,
                     tokenDate = token.TokenDate
                 });
+            }
+            catch (SqlException ex) when (ex.Number == 547)
+            {
+                return NotFound(new { success = false, message = "Patient or doctor not found." });
             }
             catch (InvalidOperationException ex)
             {

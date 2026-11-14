@@ -32,6 +32,7 @@ namespace Sep2026.Thazineihlaing.PersonalityTest.Webapi.Controllers
             if (_db.UserAnswers.Any(x => x.TestId == requestModel.TestId && x.QuestionId == requestModel.QuestionId))
                 return Conflict("This question already has an answer for this test.");
 
+            _db.Database.ExecuteSqlInterpolated($"SELECT AnswerOptionId FROM AnswerOptions WITH (HOLDLOCK) WHERE AnswerOptionId = {requestModel.AnswerOptionId}");
             var answer = _db.AnswerOptions.FirstOrDefault(
                 x => x.AnswerOptionId == requestModel.AnswerOptionId
                 && x.QuestionId == requestModel.QuestionId);

@@ -70,7 +70,7 @@ public class PantryService : IPantryService
             return false;
         }
 
-        if (!string.IsNullOrEmpty(request.ItemName))
+        if (!string.IsNullOrWhiteSpace(request.ItemName))
         {
             item.ItemName = request.ItemName.Trim();
         }
@@ -80,7 +80,7 @@ public class PantryService : IPantryService
             item.Quantity = request.Quantity.Value;
         }
 
-        if (!string.IsNullOrEmpty(request.Unit))
+        if (!string.IsNullOrWhiteSpace(request.Unit))
         {
             item.Unit = request.Unit.Trim();
         }

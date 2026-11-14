@@ -39,7 +39,7 @@ namespace Sep2026.HnitThitMayKyaw.SupermarketPos.WebApi.Controllers
         [HttpPost]
         public IActionResult CreateEmployee(UpdateEmployeesRequestModel requestModel)
         {
-            _db.Employees.AddAsync(new Employee
+            _db.Employees.Add(new Employee
             {
                 FirstName = requestModel.FirstName,
                 LastName = requestModel.LastName,
@@ -78,7 +78,7 @@ namespace Sep2026.HnitThitMayKyaw.SupermarketPos.WebApi.Controllers
             {
                 return NotFound();
             }
-            _db.Employees.Remove(employee);
+            employee.DeleteFlag = true;
             int result = _db.SaveChanges();
             string message = result > 0 ? "Delete success" : "Delete failure";
             return Ok(message);

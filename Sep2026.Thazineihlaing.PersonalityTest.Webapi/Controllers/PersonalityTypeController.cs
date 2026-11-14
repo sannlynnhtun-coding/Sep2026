@@ -94,6 +94,9 @@ namespace Sep2026.Thazineihlaing.PersonalityTest.Webapi.Controllers
                 return NotFound();
             }
 
+            if (_db.AnswerOptions.Any(x => x.PersonalityTypeId == id) || _db.Tests.Any(x => x.ResultPersonalityTypeId == id))
+                return Conflict("Personality type has answer options or completed tests.");
+
             _db.PersonalityTypes.Remove(personalityType);
 
             int result = _db.SaveChanges();

@@ -1,3 +1,4 @@
+using Microsoft.Data.SqlClient;
 ﻿using Microsoft.AspNetCore.Mvc;
 using Sep2026.ClinicPatientRecord.API.Dto;
 using Sep2026.ClinicPatientRecord.API.Models;
@@ -87,8 +88,15 @@ namespace Sep2026.ClinicPatientRecord.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var deleted =
-                await _patientService.DeleteAsync(id);
+            bool deleted;
+            try
+            {
+                deleted = await _patientService.DeleteAsync(id);
+            }
+            catch (SqlException ex) when (ex.Number == 547)
+            {
+                return Conflict(new { message = "Patient has token records and cannot be deleted." });
+            }
 
             if (!deleted)
             {
