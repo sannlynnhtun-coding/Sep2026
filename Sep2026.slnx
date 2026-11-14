@@ -9,6 +9,7 @@
   <Project Path="Sep2026.ConsoleApp4/Sep2026.ConsoleApp4.csproj" Id="b74132de-3560-4a18-bf95-b397ab5e6ec3" />
   <Project Path="Sep2026.ConsoleApp5.Database/Sep2026.ConsoleApp5.Database.csproj" Id="9db46fa9-6448-4acb-92f5-ceeb41ba4c39" />
   <Project Path="Sep2026.ConsoleApp5/Sep2026.ConsoleApp5.csproj" Id="21b6e168-8f94-4a9b-bb5e-61f9e1c4f42f" />
+  <Project Path="Sep2026.Panyooneain_Movie Watchlist System/Sep2026.Panyooneain_Movie Watchlist System.csproj" />
   <Project Path="Sep2026.ProjectIdea1/Sep2026.ProjectIdea1.csproj" Id="46c2f53f-ebcd-4621-8f14-f9c198779ffb" />
   <Project Path="Sep2026.WebApi/Sep2026.WebApi.csproj" Id="f86b5941-3b5b-4788-b37a-a959feec321b" />
   <Project Path="Sep2026.WinFormsApp/Sep2026.WinFormsApp.csproj" Id="05a68eec-1614-43ae-9e5c-d413e7602178" />
