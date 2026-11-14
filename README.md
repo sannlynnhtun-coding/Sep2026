@@ -30,3 +30,5 @@ For local Development, save the key with .NET User Secrets for `Sep2026.SwanHtet
 The PersonalityTest context defaults to Windows authentication for local `Sept2026Db`; override it with `ConnectionStrings__PersonalityTestDb` rather than embedding database credentials.
 
 The security regression also starts a temporary Kestrel server bound to loopback on an automatically assigned port, exercises `/api/spoonacular` over HTTP with a mocked upstream handler, and checks that `/api/Recipe` still uses local data. It checks validation, recipe and ingredient mapping, pantry matching, upstream 404/error responses, and credential/detail redaction. It does not use a real Spoonacular key or send upstream network requests.
+
+The same route smoke checks also run over local HTTPS with normal certificate validation enabled, using a trusted .NET development certificate (`dotnet dev-certs https --check --trust`). The test checks HTTP-to-HTTPS redirection before exercising the mocked-upstream routes. It does not install certificates or bypass validation.

@@ -104,6 +104,7 @@ try
     Assert(await diagnostic.TestConnection(new TestEnvironment()) is NotFoundResult, "Production diagnostic must be hidden.");
     await new SqlCommand("CREATE TABLE Recipes (RecipeId int PRIMARY KEY, Title nvarchar(200), Instructions nvarchar(max), ReadyInMinutes int, Servings int);", db).ExecuteNonQueryAsync();
     await HttpSmoke.Run(connectionString);
+    await HttpSmoke.Run(connectionString, useHttps: true);
     Console.WriteLine("PASS: SQL injection payloads, importer, recipe credential transport/errors, production diagnostic.");
 
     async Task<int> Count(string table) => Convert.ToInt32(await new SqlCommand("SELECT COUNT(*) FROM " + table, db).ExecuteScalarAsync());
