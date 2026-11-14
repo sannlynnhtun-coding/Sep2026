@@ -148,13 +148,10 @@ public class SpoonacularService
 
     public async Task<List<RecipeSearchResponseModel>> SearchRecipesByPantryAsync()
     {
-        var pantryItems = await _db.PantryItems.ToListAsync();
+        var pantryItems = (await _db.PantryItems.ToListAsync()).Where(p => !string.IsNullOrWhiteSpace(p.ItemName)).ToList();
 
         if (pantryItems.Count == 0)
-        {
-            throw new InvalidOperationException(
-                "Pantry is empty. Please add items to your pantry first.");
-        }
+            return [];
 
         var (baseUrl, apiKey) = GetConfig();
 

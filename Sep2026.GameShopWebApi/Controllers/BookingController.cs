@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Sep2026.GameShopWebApi.Models;
 using Sep2026.GameShopWebApi.Utils;
@@ -151,8 +151,9 @@ namespace Sep2026.GameShopWebApi.Controllers
             //customer must pay atleast one session as deposit if they booking ( to make sure customer will arrive )
             //note : if customer paid valid desposit ammount,keep that seat for this booking.
             
+            decimal depositAmount = decimal.Round(createRequest.DepositAmount, 2, MidpointRounding.AwayFromZero);
             string bookingStatus = "Pending";
-            if (createRequest.DepositAmount >= validConsole.Category.HourlyRate)
+            if (depositAmount >= validConsole.Category.HourlyRate)
             {
                 bookingStatus = "Confirmed";
                 //validConsole.CurrentStatus = "Taken";
@@ -161,7 +162,13 @@ namespace Sep2026.GameShopWebApi.Controllers
 
             TimeSpan duration = createRequest.EndTime.Value - createRequest.StartTime.Value;
             decimal totalHours = (decimal)duration.TotalHours;
-            decimal totalAmount = totalHours * validConsole.Category.HourlyRate;
+            if (decimal.Round(totalHours, 2, MidpointRounding.AwayFromZero) > 99.99m)
+                return BadRequest("Duration exceeds the supported 99.99 hours.");
+            decimal totalAmount = decimal.Round(totalHours * validConsole.Category.HourlyRate, 2, MidpointRounding.AwayFromZero);
+            if (totalAmount > 9999999999999999.99m)
+                return BadRequest("Total amount exceeds the supported limit.");
+            if (createRequest.DepositAmount < 0 || depositAmount > totalAmount)
+                return BadRequest("Deposit must be between zero and the total amount.");
 
             Booking newBooking = new Booking
             {
@@ -170,7 +177,7 @@ namespace Sep2026.GameShopWebApi.Controllers
                 CustomerPhone = createRequest.CustomerPhone,
                 StartTime = createRequest.StartTime.Value,
                 EndTime = createRequest.EndTime.Value,
-                DepositAmount = createRequest.DepositAmount,
+                DepositAmount = depositAmount,
                 TotalHours = totalHours,
                 TotalAmount = totalAmount,
                 BookingStatus = bookingStatus,
@@ -245,13 +252,11 @@ namespace Sep2026.GameShopWebApi.Controllers
                     .Include(gc => gc.Category)
                     .FirstOrDefault(x => x.Id == targetBooking.ConsoleId)?.Category?.HourlyRate ?? 0;
 
-                if (updateRequest.DepositAmount.Value < hourlyRate)
+                decimal depositAmount = decimal.Round(updateRequest.DepositAmount.Value, 2, MidpointRounding.AwayFromZero);
+                if (updateRequest.DepositAmount.Value < 0 || depositAmount < hourlyRate)
                     return BadRequest($"Minimum deposit is {hourlyRate}.");
 
-                if (updateRequest.DepositAmount.Value > targetBooking.TotalAmount)
-                    return BadRequest("Deposit cannot exceed total amount.");
-
-                targetBooking.DepositAmount = updateRequest.DepositAmount.Value;
+                targetBooking.DepositAmount = depositAmount;
                 hasChanges = true;
 
             }
@@ -293,6 +298,8 @@ namespace Sep2026.GameShopWebApi.Controllers
                 //Recalculate time and totalAmmount
                 TimeSpan duration = updateRequest.EndTime.Value - updateRequest.StartTime.Value;
                 decimal totalHours = (decimal) duration.TotalHours;
+                if (decimal.Round(totalHours, 2, MidpointRounding.AwayFromZero) > 99.99m)
+                    return BadRequest("Duration exceeds the supported 99.99 hours.");
 
                 decimal? hourlyRate = _db.GameConsoles
                     .Include(c => c.Category)
@@ -301,13 +308,18 @@ namespace Sep2026.GameShopWebApi.Controllers
                 if (!hourlyRate.HasValue)
                     return NotFound("Invalid console category");
 
-                decimal totalAmount = totalHours * hourlyRate.Value;
+                decimal totalAmount = decimal.Round(totalHours * hourlyRate.Value, 2, MidpointRounding.AwayFromZero);
+                if (totalAmount > 9999999999999999.99m)
+                    return BadRequest("Total amount exceeds the supported limit.");
 
                 //update totalhours and total amount 
                 targetBooking.TotalAmount = totalAmount;
                 targetBooking.TotalHours = totalHours;
                 hasChanges = true;
             }
+
+            if (targetBooking.DepositAmount < 0 || targetBooking.DepositAmount > targetBooking.TotalAmount)
+                return BadRequest("Deposit must be between zero and the total amount.");
 
             if (hasChanges) {
                 targetBooking.UpdatedAt = DateTime.Now;

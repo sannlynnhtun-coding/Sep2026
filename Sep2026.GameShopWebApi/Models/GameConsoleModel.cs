@@ -1,4 +1,6 @@
-﻿namespace Sep2026.GameShopWebApi.Models
+using System.ComponentModel.DataAnnotations;
+
+namespace Sep2026.GameShopWebApi.Models
 {
     public class GameConsoleModel
     {
@@ -12,12 +14,16 @@
         }
         public class UpdateRequest
         {
+            [StringLength(20, MinimumLength = 1)]
             public string? ConsoleNumber { get; set; }
-            public int CategoryId { get; set; }
+            [Range(1, int.MaxValue)]
+            public int? CategoryId { get; set; }
+            [StringLength(20)]
             public string? CurrentStatus { get; set; }
         }
         public class CreateRequest
         {
+            [Range(1, int.MaxValue)]
             public int CategoryId { get; set; } = 0;
         }
 

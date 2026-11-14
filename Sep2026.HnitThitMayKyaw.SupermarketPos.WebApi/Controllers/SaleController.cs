@@ -39,6 +39,11 @@ namespace Sep2026.HnitThitMayKyaw.SupermarketPos.WebApi.Controllers
         [HttpPost]
         public IActionResult CreateSale(CreateSaleRequestModel requestModel)
         {
+            if (!_db.Employees.Any(x => x.EmployeeId == requestModel.EmployeeId && !x.DeleteFlag))
+                return NotFound("Active employee not found.");
+            if (requestModel.CustomerId.HasValue && !_db.Customers.Any(x => x.CustomerId == requestModel.CustomerId.Value && !x.DeleteFlag))
+                return NotFound("Active customer not found.");
+
             _db.Sales.Add(new Sale
             {
                 SaleNumber = requestModel.SaleNumber,

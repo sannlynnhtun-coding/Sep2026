@@ -39,6 +39,9 @@ namespace Sep2026.HnitThitMayKyaw.SupermarketPos.WebApi.Controllers
         [HttpPost]
         public IActionResult CreateProduct(CreateProductRequestModel requestModel)
         {
+            if (!_db.Categories.Any(x => x.CategoryId == requestModel.CategoryId && !x.DeleteFlag))
+                return NotFound("Active category not found.");
+
             _db.Products.Add(new Product
             {
                 Barcode = requestModel.Barcode,
@@ -64,6 +67,9 @@ namespace Sep2026.HnitThitMayKyaw.SupermarketPos.WebApi.Controllers
                 return NotFound();
             }
             
+            if (!_db.Categories.Any(x => x.CategoryId == requestModel.CategoryId && !x.DeleteFlag))
+                return NotFound("Active category not found.");
+
             product.Barcode = requestModel.Barcode;
             product.ProductName = requestModel.ProductName;
             product.CategoryId = requestModel.CategoryId;
@@ -85,7 +91,7 @@ namespace Sep2026.HnitThitMayKyaw.SupermarketPos.WebApi.Controllers
                 return NotFound();
             }
             
-            _db.Products.Remove(product);
+            product.DeleteFlag = true;
             int result = _db.SaveChanges();
             string message = result > 0 ? "Delete successful" : "Delete failed";
             return Ok(message);

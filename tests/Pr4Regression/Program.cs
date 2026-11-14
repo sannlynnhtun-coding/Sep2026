@@ -23,3 +23,17 @@ finally
     Environment.SetEnvironmentVariable("ConnectionStrings__DefaultConnection", original);
 }
 Console.WriteLine("Regression checks passed.");
+
+var zodiac = new Sep2026.ZodiacHoroscopeWebApi.Models.ZodiacCreateRequestModel
+{
+    ZodiacName = "Aries", Symbol = "Ram", Element = "Fire", DateRange = "March 21 - April 19", Description = "Test"
+};
+if (!System.ComponentModel.DataAnnotations.Validator.TryValidateObject(zodiac, new(zodiac), [], true))
+    throw new Exception("Valid Zodiac input was rejected.");
+zodiac.Symbol = new string('x', 11);
+if (System.ComponentModel.DataAnnotations.Validator.TryValidateObject(zodiac, new(zodiac), [], true))
+    throw new Exception("Zodiac schema length was not enforced.");
+var horoscope = new Sep2026.ZodiacHoroscopeWebApi.Models.HoroscopeUpdateRequest { LuckyNumber = -1 };
+if (System.ComponentModel.DataAnnotations.Validator.TryValidateObject(horoscope, new(horoscope), [], true))
+    throw new Exception("Negative lucky number was accepted.");
+Console.WriteLine("PASS: Zodiac schema bounds and Horoscope numeric validation.");

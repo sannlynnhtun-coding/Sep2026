@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -49,20 +49,20 @@ namespace Sep2026.GameShopWebApi.Controllers
         [HttpPost]
         public IActionResult CreateGameConsole(GameConsoleModel.CreateRequest createRequest)
         {
+            using var transaction = _db.BeginSchedulingTransaction();
             
             if (createRequest.CategoryId < 1)
                 return BadRequest("Invalid Category Id");
             
 
             var validCategory = _db.ConsoleCategories
-                .Include(g => g.GameConsoles)
-                .FirstOrDefault(category => category.Id == createRequest.CategoryId);
+                .FirstOrDefault(category => category.Id == createRequest.CategoryId && !category.IsDeleted);
             
             if (validCategory == null)
                 return BadRequest("Invalid Category Id");
 
             //consoleNumber format : PS4-1,PS5-1 etc
-            var consoleNumber = $"{validCategory.Name}-{validCategory.GameConsoles.Count() + 1}";
+            var consoleNumber = NextConsoleNumber(validCategory.Name);
             var newGameConsole = new GameConsole
             {
                 CategoryId = validCategory.Id,
@@ -74,7 +74,7 @@ namespace Sep2026.GameShopWebApi.Controllers
 
             _db.GameConsoles.Add(newGameConsole);
             _db.SaveChanges();
-            
+            transaction.Commit();
             return Ok(_modelConverter.ConvertGameConsoleResponse(newGameConsole));
 
         }
@@ -83,6 +83,7 @@ namespace Sep2026.GameShopWebApi.Controllers
         [HttpPatch("{id}")]
         public IActionResult UpdateGameConsole(int id , GameConsoleModel.UpdateRequest updateRequest)
         {
+            using var transaction = _db.BeginSchedulingTransaction();
 
             if (updateRequest == null)
                 return BadRequest("Must define a body");
@@ -92,32 +93,39 @@ namespace Sep2026.GameShopWebApi.Controllers
                 return NotFound("Console not found");
             
             //update consoleNumber
-            if (!string.IsNullOrEmpty(updateRequest.ConsoleNumber))
+            if (updateRequest.ConsoleNumber != null)
             {
-                targetConsole.ConsoleNumber = updateRequest.ConsoleNumber;
+                string consoleNumber = updateRequest.ConsoleNumber.Trim();
+                if (consoleNumber.Length == 0 || consoleNumber.Length > 20)
+                    return BadRequest("Console number must contain 1 to 20 characters.");
+                if (_db.GameConsoles.Any(console => console.Id != id && console.ConsoleNumber == consoleNumber))
+                    return Conflict("Console number already exists.");
+                targetConsole.ConsoleNumber = consoleNumber;
             }
 
             //update currentStatus
-            if (!string.IsNullOrEmpty(updateRequest.CurrentStatus) && IsValidConsoleStatus(updateRequest.CurrentStatus))
+            if (updateRequest.CurrentStatus != null)
             {
-
+                if (!IsValidConsoleStatus(updateRequest.CurrentStatus))
+                    return BadRequest("Invalid console status.");
                 targetConsole.CurrentStatus = updateRequest.CurrentStatus;
             }
 
             //update category
-            //note : changing category creates new console number 
-            //example : if ps5 to ps4,count the current max ( id + 1 ) of ps4 console.
-            var validConsoleCategory = _db.ConsoleCategories.Include(category => category.GameConsoles).FirstOrDefault(c => c.Id == updateRequest.CategoryId);
-            if (validConsoleCategory != null)
+            // Changing category allocates an unused console number.
+            if (updateRequest.CategoryId.HasValue && updateRequest.CategoryId.Value < 1)
+                return BadRequest("Invalid Category Id.");
+            if (updateRequest.CategoryId.HasValue && updateRequest.CategoryId.Value != targetConsole.CategoryId)
             {
-                int consoleByCategoryCount = validConsoleCategory.GameConsoles.Count();
-                string newConsoleNumber = $"{validConsoleCategory.Name}-{consoleByCategoryCount + 1}";
-                
-                targetConsole.CategoryId = validConsoleCategory.Id;
-                targetConsole.ConsoleNumber = newConsoleNumber;
+                var validCategory = _db.ConsoleCategories.FirstOrDefault(category => category.Id == updateRequest.CategoryId && !category.IsDeleted);
+                if (validCategory == null)
+                    return BadRequest("Invalid Category Id.");
+                targetConsole.CategoryId = validCategory.Id;
+                targetConsole.ConsoleNumber = NextConsoleNumber(validCategory.Name);
             }
 
             int status = _db.SaveChanges();
+            transaction.Commit();
             return status > 0 ? Ok(_modelConverter.ConvertGameConsoleResponse(targetConsole)) : BadRequest("Fail to update.");
 
         }
@@ -126,6 +134,7 @@ namespace Sep2026.GameShopWebApi.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeleteGameConsole(int id , [FromQuery] bool isHardDelete = false)
         {
+            using var transaction = _db.BeginSchedulingTransaction();
             var targetConsole = _db.GameConsoles.FirstOrDefault(g => g.Id == id);
 
             if (targetConsole == null)
@@ -135,12 +144,12 @@ namespace Sep2026.GameShopWebApi.Controllers
             bool isBookingsExist = _db.Bookings
                 .Any(booking => 
                     booking.ConsoleId == targetConsole.Id &&
-                    booking.IsDeleted == false);
+                    (isHardDelete || !booking.IsDeleted));
 
             bool isSessionsExist = _db.GameSessions
                 .Any(gameSession => 
                     gameSession.ConsoleId == targetConsole.Id &&
-                    gameSession.IsDeleted == false);
+                    (isHardDelete || !gameSession.IsDeleted));
 
             if (isBookingsExist || isSessionsExist)
                 return BadRequest($"Console with Id {id} having  bookings or sessions.\nTry to delete or move them first.");
@@ -155,10 +164,24 @@ namespace Sep2026.GameShopWebApi.Controllers
                 targetConsole.IsDeleted = true;
 
             int status = _db.SaveChanges();
+            transaction.Commit();
             return status == 0 ? BadRequest("Couldn't delete your request") : Ok("Successfully deleted");
 
         }
 
+
+        private string NextConsoleNumber(string categoryName)
+        {
+            int number = 1;
+            while (true)
+            {
+                string suffix = "-" + number;
+                string candidate = categoryName[..Math.Min(categoryName.Length, 20 - suffix.Length)] + suffix;
+                if (!_db.GameConsoles.Any(console => console.ConsoleNumber == candidate))
+                    return candidate;
+                number++;
+            }
+        }
 
         //helper function to check enum
         private bool IsValidConsoleStatus(string inputType)

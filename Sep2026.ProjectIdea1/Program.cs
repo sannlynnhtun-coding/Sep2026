@@ -15,6 +15,7 @@ SqlConnectionStringBuilder connectionStringBuilder = new SqlConnectionStringBuil
     ?? "Server=.;Database=Sep2026Db;Integrated Security=True;TrustServerCertificate=True;");
 using IDbConnection connection = new SqlConnection(connectionStringBuilder.ConnectionString);
 connection.Open();
+using var transaction = connection.BeginTransaction();
 
 for (int i = 0; i < responseModel.answers.Length; i++)
 {
@@ -27,9 +28,10 @@ for (int i = 0; i < responseModel.answers.Length; i++)
            (@questionNo
            ,@answerNo
            ,@answerResult)";
-    connection.Execute(query, new { item.questionNo, item.answerNo, item.answerResult });
+    connection.Execute(query, new { item.questionNo, item.answerNo, item.answerResult }, transaction);
 }
 
+transaction.Commit();
 connection.Close();
 
 // JSON to C# class conversion

@@ -26,7 +26,7 @@ namespace Sep2026.Thazineihlaing.PersonalityTest.Webapi.Controllers
         [HttpGet("Edit/{id}")]
         public IActionResult GetAnswerOption(int id)
         {
-            var answerOption = _db.AnswerOptions.FirstOrDefault(x => x.QuestionId == id);
+            var answerOption = _db.AnswerOptions.FirstOrDefault(x => x.AnswerOptionId == id);
             if (answerOption is null)
             {
                 return NotFound("");
@@ -37,6 +37,10 @@ namespace Sep2026.Thazineihlaing.PersonalityTest.Webapi.Controllers
         [HttpPost]
         public IActionResult CreateAnswerOption(AnswerOptionCreateRequestModel requestModel)
         {
+            if (!_db.Questions.Any(x => x.QuestionId == requestModel.QuestionId) ||
+                !_db.PersonalityTypes.Any(x => x.PersonalityTypeId == requestModel.PersonalityTypeId))
+                return NotFound("Question or personality type not found.");
+
             _db.AnswerOptions.Add(new AnswerOption
             {
                 QuestionId = requestModel.QuestionId,
@@ -56,12 +60,23 @@ namespace Sep2026.Thazineihlaing.PersonalityTest.Webapi.Controllers
         [HttpPatch("{id}")]
         public IActionResult UpdateAnswerOption(int id, AnswerOptionUpdateRequestModel requestModel)
         {
+            using var transaction = _db.Database.BeginTransaction();
+            _db.Database.ExecuteSqlInterpolated($"SELECT AnswerOptionId FROM AnswerOptions WITH (XLOCK, HOLDLOCK) WHERE AnswerOptionId = {id}");
             var item = _db.AnswerOptions.FirstOrDefault(x => x.AnswerOptionId == id);
 
             if (item is null)
             {
                 return NotFound();
             }
+
+            if (requestModel.QuestionId.HasValue && !_db.Questions.Any(x => x.QuestionId == requestModel.QuestionId.Value) ||
+                requestModel.PersonalityTypeId.HasValue && !_db.PersonalityTypes.Any(x => x.PersonalityTypeId == requestModel.PersonalityTypeId.Value))
+                return NotFound("Question or personality type not found.");
+
+            if ((requestModel.QuestionId.HasValue && requestModel.QuestionId.Value != item.QuestionId ||
+                 requestModel.PersonalityTypeId.HasValue && requestModel.PersonalityTypeId.Value != item.PersonalityTypeId) &&
+                _db.UserAnswers.Any(x => x.AnswerOptionId == id))
+                return Conflict("Answered options cannot change question or personality type.");
 
             if (requestModel.QuestionId != null)
             {
@@ -79,6 +94,7 @@ namespace Sep2026.Thazineihlaing.PersonalityTest.Webapi.Controllers
             }
 
             int result = _db.SaveChanges();
+            transaction.Commit();
 
             string message = result > 0
                 ? "Updating Successful."
@@ -90,6 +106,8 @@ namespace Sep2026.Thazineihlaing.PersonalityTest.Webapi.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeleteAnswerOption(int id)
         {
+            using var transaction = _db.Database.BeginTransaction();
+            _db.Database.ExecuteSqlInterpolated($"SELECT AnswerOptionId FROM AnswerOptions WITH (XLOCK, HOLDLOCK) WHERE AnswerOptionId = {id}");
             var answerOption = _db.AnswerOptions.FirstOrDefault(x => x.AnswerOptionId == id);
 
             if (answerOption is null)
@@ -97,9 +115,13 @@ namespace Sep2026.Thazineihlaing.PersonalityTest.Webapi.Controllers
                 return NotFound();
             }
 
+            if (_db.UserAnswers.Any(x => x.AnswerOptionId == id))
+                return Conflict("Answer option has recorded answers.");
+
             _db.AnswerOptions.Remove(answerOption);
 
             int result = _db.SaveChanges();
+            transaction.Commit();
 
             string message = result > 0
                 ? "Deleting Successful."

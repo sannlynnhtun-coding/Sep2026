@@ -98,6 +98,12 @@ static class HttpSmoke
             int recipeId = created.GetProperty("recipeId").GetInt32();
             var added = await Send(HttpMethod.Post, $"/api/Ingredient?recipeId={recipeId}", ingredientBody, HttpStatusCode.OK);
             int ingredientId = added.GetProperty("id").GetInt32();
+            var unmatched = await Get("/api/Recipe/search", HttpStatusCode.OK);
+            Assert(unmatched.GetArrayLength() == 0, "Blank legacy pantry item matched unrelated recipes.");
+            await Send(HttpMethod.Patch, "/api/Pantry/1", new { itemName = " ", unit = " " }, HttpStatusCode.OK);
+            var unchangedPantry = await Get("/api/Pantry/1", HttpStatusCode.OK);
+            Assert(unchangedPantry.GetProperty("itemName").GetString() == "pasta", "Whitespace patch erased pantry data.");
+
             await Send(HttpMethod.Patch, $"/api/Ingredient/{ingredientId}", new { recipeId = int.MaxValue, ingredientName = "Changed" }, HttpStatusCode.NotFound);
             await Send(HttpMethod.Patch, $"/api/Ingredient/{ingredientId}", new { amount = -1 }, HttpStatusCode.BadRequest);
             var retained = await Get($"/api/Ingredient/{ingredientId}", HttpStatusCode.OK);
