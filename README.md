@@ -28,3 +28,5 @@ Local recipe and ingredient CRUD remains at `/api/Recipe` and `/api/Ingredient`.
 For local Development, save the key with .NET User Secrets for `Sep2026.SwanHtetSoe.RecipeAndPantryFinder`; its UserSecretsId identifies the store but contains no credential. Outside Development, configure `Spoonacular__ApiKey` through the environment or a secret provider. The base URL defaults to `https://api.spoonacular.com`. Mock coverage is included in `dotnet run --project tests/SecurityRegression`; that test does not call Spoonacular.
 
 The PersonalityTest context defaults to Windows authentication for local `Sept2026Db`; override it with `ConnectionStrings__PersonalityTestDb` rather than embedding database credentials.
+
+The security regression also starts a temporary Kestrel server bound to loopback on an automatically assigned port, exercises `/api/spoonacular` over HTTP with a mocked upstream handler, and checks that `/api/Recipe` still uses local data. It checks validation, recipe and ingredient mapping, pantry matching, upstream 404/error responses, and credential/detail redaction. It does not use a real Spoonacular key or send upstream network requests.
