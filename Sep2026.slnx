@@ -3,6 +3,9 @@
     <File Path="README.md" />
   </Folder>
   <Project Path="Sep2026.AtmConsoleApp/Sep2026.AtmConsoleApp.csproj" Id="2b91e3e7-c54a-4eff-8e4e-b95c08e37aaf" />
+  <Project Path="Sep2026.AyeChan.ExpenseTracker.ConsoleApp/Sep2026.AyeChan.ExpenseTracker.ConsoleApp.csproj" Id="f2f74ee5-69d7-4f5f-9655-cef5329daa8b" />
+  <Project Path="Sep2026.AyeChan.ExpenseTracker.Database/Sep2026.AyeChan.ExpenseTracker.Database.csproj" Id="4d52ac28-7e6a-48e4-bc53-c6e644464ac5" />
+  <Project Path="Sep2026.AyeChan.ExpenseTracker.WebApi/Sep2026.AyeChan.ExpenseTracker.WebApi.csproj" Id="51440681-c7cd-4ebb-86fb-2658dfb8aaf8" />
   <Project Path="Sep2026.ConsoleApp/Sep2026.ConsoleApp.csproj" />
   <Project Path="Sep2026.ConsoleApp2/Sep2026.ConsoleApp2.csproj" Id="5a0ddc2e-1e55-4126-b7c5-a9176051d59f" />
   <Project Path="Sep2026.ConsoleApp3/Sep2026.ConsoleApp3.csproj" Id="df5ddc8a-5a49-4053-9d9c-05ac8a1bff23" />
