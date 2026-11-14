@@ -58,9 +58,9 @@ namespace Sep2026.ConsoleApp3
                 StudentDto student = new StudentDto
                 {
                     Id = Convert.ToInt32(item["Id"]),
-                    No = Convert.ToString(item["No"]),
-                    Name = Convert.ToString(item["Name"]),
-                    ClassNo = Convert.ToString(item["ClassNo"])
+                    No = Convert.ToString(item["No"]) ?? string.Empty,
+                    Name = Convert.ToString(item["Name"]) ?? string.Empty,
+                    ClassNo = Convert.ToString(item["ClassNo"]) ?? string.Empty
                 };
                 students.Add(student);
             }
