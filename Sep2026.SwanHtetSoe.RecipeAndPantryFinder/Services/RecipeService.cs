@@ -28,7 +28,7 @@ public class RecipeService : IRecipeService
 
         if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(apiKey))
         {
-            throw new Exception("Spoonacular BaseUrl or ApiKey is not configured in appsettings.json.");
+            throw new Exception("Configure Spoonacular__BaseUrl and Spoonacular__ApiKey in the environment or another configuration provider.");
         }
 
         return (baseUrl, apiKey);

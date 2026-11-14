@@ -5,14 +5,9 @@ namespace Sep2026.ConsoleApp3
 {
     public class StudentService
     {
-        private SqlConnectionStringBuilder sqlConnectionStringBuilder = new SqlConnectionStringBuilder()
-        {
-            DataSource = ".",
-            InitialCatalog = "Sep2026Db",
-            UserID = "sa",
-            Password = "sasa@123",
-            TrustServerCertificate = true
-        };
+        private SqlConnectionStringBuilder sqlConnectionStringBuilder = new SqlConnectionStringBuilder(
+            Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+            ?? "Server=.;Database=Sep2026Db;Integrated Security=True;TrustServerCertificate=True;");
 
         // CREATE: add a new student.
         public void RegisterStudent(string no, string name, string classNo)

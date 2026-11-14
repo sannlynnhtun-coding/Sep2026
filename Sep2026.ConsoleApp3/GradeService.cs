@@ -5,14 +5,9 @@ namespace Sep2026.ConsoleApp3
 {
     public class GradeService
     {
-        private SqlConnectionStringBuilder sqlConnectionStringBuilder = new SqlConnectionStringBuilder()
-        {
-            DataSource = ".",
-            InitialCatalog = "Sep2026Db",
-            UserID = "sa",
-            Password = "sasa@123",
-            TrustServerCertificate = true
-        };
+        private SqlConnectionStringBuilder sqlConnectionStringBuilder = new SqlConnectionStringBuilder(
+            Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+            ?? "Server=.;Database=Sep2026Db;Integrated Security=True;TrustServerCertificate=True;");
 
         // CREATE: find the student, then add their grade.
         public void RegisterGrade(string studentNo, string subject, int mark)
