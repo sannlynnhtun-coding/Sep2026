@@ -1,4 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
+// See https://aka.ms/new-console-template for more information
 using Dapper;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -55,20 +55,20 @@ connection.Close();
 // JSON to C# class conversion
 public class QuestionAnswerResponseModel
 {
-    public QuestionModel[] questions { get; set; }
-    public AnswerModel[] answers { get; set; }
-    public string[] numberList { get; set; }
+    public QuestionModel[] questions { get; set; } = [];
+    public AnswerModel[] answers { get; set; } = [];
+    public string[] numberList { get; set; } = [];
 }
 
 public class QuestionModel
 {
     public int questionNo { get; set; }
-    public string questionName { get; set; }
+    public string questionName { get; set; } = string.Empty;
 }
 
 public class AnswerModel
 {
     public int questionNo { get; set; }
     public int answerNo { get; set; }
-    public string answerResult { get; set; }
+    public string answerResult { get; set; } = string.Empty;
 }
