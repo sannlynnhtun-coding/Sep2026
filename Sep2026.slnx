@@ -2,6 +2,8 @@
   <Folder Name="/Solution Items/">
     <File Path="README.md" />
   </Folder>
+  <Project Path="Sep2026.HnitThitMayKyaw.SupermarketPos.Database/Sep2026.HnitThitMayKyaw.SupermarketPos.Database.csproj" />
+  <Project Path="Sep2026.HnitThitMayKyaw.SupermarketPos.WebApi/Sep2026.HnitThitMayKyaw.SupermarketPos.WebApi.csproj" />
   <Project Path="Sep2026.AtmConsoleApp/Sep2026.AtmConsoleApp.csproj" Id="2b91e3e7-c54a-4eff-8e4e-b95c08e37aaf" />
   <Project Path="Sep2026.ConsoleApp/Sep2026.ConsoleApp.csproj" />
   <Project Path="Sep2026.ConsoleApp2/Sep2026.ConsoleApp2.csproj" Id="5a0ddc2e-1e55-4126-b7c5-a9176051d59f" />
