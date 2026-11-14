@@ -11,11 +11,13 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Sep2026Db")));
 
-builder.Services.AddHttpClient<IRecipeService, RecipeService>();
-
+// Services
+builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddScoped<IPantryService, PantryService>();
+builder.Services.AddScoped<IIngredientService, IngredientService>();
 
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

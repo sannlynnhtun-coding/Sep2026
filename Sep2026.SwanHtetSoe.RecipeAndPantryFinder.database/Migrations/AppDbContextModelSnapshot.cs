@@ -47,6 +47,91 @@ namespace Sep2026.ReceipeDb.Migrations
 
                     b.ToTable("PantryItems");
                 });
+
+            modelBuilder.Entity("Sep2026.ReceipeDb.Models.Recipe", b =>
+                {
+                    b.Property<int>("RecipeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RecipeId"));
+
+                    b.Property<string>("Instructions")
+                        .IsRequired()
+                        .HasColumnType("NVARCHAR(MAX)");
+
+                    b.Property<int>("ReadyInMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Servings")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SpoonacularId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("RecipeId")
+                        .HasName("PK_Recipes");
+
+                    b.HasIndex("SpoonacularId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Recipes_SpoonacularId");
+
+                    b.ToTable("Recipes");
+                });
+
+            modelBuilder.Entity("Sep2026.ReceipeDb.Models.RecipeIngredient", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(10, 2)");
+
+                    b.Property<string>("IngredientName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("RecipeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Id")
+                        .HasName("PK_RecipeIngredients");
+
+                    b.HasIndex("RecipeId");
+
+                    b.ToTable("RecipeIngredients");
+                });
+
+            modelBuilder.Entity("Sep2026.ReceipeDb.Models.RecipeIngredient", b =>
+                {
+                    b.HasOne("Sep2026.ReceipeDb.Models.Recipe", "Recipe")
+                        .WithMany("RecipeIngredients")
+                        .HasForeignKey("RecipeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_RecipeIngredients_Recipes");
+
+                    b.Navigation("Recipe");
+                });
+
+            modelBuilder.Entity("Sep2026.ReceipeDb.Models.Recipe", b =>
+                {
+                    b.Navigation("RecipeIngredients");
+                });
 #pragma warning restore 612, 618
         }
     }

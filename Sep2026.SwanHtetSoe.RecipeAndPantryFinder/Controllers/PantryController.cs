@@ -34,27 +34,14 @@ public class PantryController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreatePantryItem([FromBody] PantryItemCreateRequestModel request)
+    public async Task<IActionResult> CreatePantryItem(PantryItemCreateRequestModel request)
     {
-        if (string.IsNullOrWhiteSpace(request.ItemName))
-        {
-            return BadRequest("ItemName is required.");
-        }
-        if (request.Quantity <= 0)
-        {
-            return BadRequest("Quantity must be greater than zero.");
-        }
-        if (string.IsNullOrWhiteSpace(request.Unit))
-        {
-            return BadRequest("Unit is required.");
-        }
-
         var id = await _pantryService.CreatePantryItemAsync(request);
         return Ok(new { Message = "Pantry item created successfully.", PantryItemId = id });
     }
 
     [HttpPatch("{id}")]
-    public async Task<IActionResult> UpdatePantryItem(int id, [FromBody] PantryItemUpdateRequestModel request)
+    public async Task<IActionResult> UpdatePantryItem(int id,PantryItemUpdateRequestModel request)
     {
         var updated = await _pantryService.UpdatePantryItemAsync(id, request);
         if (!updated)
