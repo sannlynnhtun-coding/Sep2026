@@ -23,7 +23,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     ));
 
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command",LogLevel.None);
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+    app.UseExceptionHandler();
 
 // Import optional seed data only when supplied alongside the application.
 string filePath = Path.Combine(app.Environment.ContentRootPath, "DataFiles", "ZodiacAndHoroscopeData.json");

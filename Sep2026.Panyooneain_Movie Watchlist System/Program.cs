@@ -12,7 +12,12 @@ builder.Services.AddDbContext<MovieDbContext>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+    app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {

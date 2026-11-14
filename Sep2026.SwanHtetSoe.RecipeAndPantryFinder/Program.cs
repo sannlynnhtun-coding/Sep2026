@@ -11,11 +11,18 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Sep2026Db")));
 
-builder.Services.AddHttpClient<IRecipeService, RecipeService>();
+builder.Services.AddHttpClient<IRecipeService, RecipeService>()
+    .RedactLoggedHeaders(new[] { "x-api-key" })
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 
 builder.Services.AddScoped<IPantryService, PantryService>();
 
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+    app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
