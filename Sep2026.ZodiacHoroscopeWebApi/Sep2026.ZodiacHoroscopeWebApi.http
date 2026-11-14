@@ -1,0 +1,6 @@
+@Sep2026.ZodiacHoroscopeWebApi_HostAddress = http://localhost:5129
+
+GET {{Sep2026.ZodiacHoroscopeWebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
