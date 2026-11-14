@@ -102,7 +102,8 @@ try
     catch (InvalidOperationException ex) { Assert(ex.Message.Contains("HTTPS"), "Unexpected configuration failure."); }
     var diagnostic = new DatabaseTestController(new DatabaseConnection(settings));
     Assert(await diagnostic.TestConnection(new TestEnvironment()) is NotFoundResult, "Production diagnostic must be hidden.");
-    await new SqlCommand("CREATE TABLE Recipes (RecipeId int PRIMARY KEY, Title nvarchar(200), Instructions nvarchar(max), ReadyInMinutes int, Servings int);", db).ExecuteNonQueryAsync();
+    await new SqlCommand("CREATE TABLE Recipes (RecipeId int IDENTITY PRIMARY KEY, Title nvarchar(200), Instructions nvarchar(max), ReadyInMinutes int, Servings int); CREATE TABLE RecipeIngredients (Id int IDENTITY PRIMARY KEY, RecipeId int REFERENCES Recipes(RecipeId), IngredientName nvarchar(100), Amount decimal(10,2), Unit nvarchar(50));", db).ExecuteNonQueryAsync();
+    await PersonalitySmoke.Run(connectionString);
     await HttpSmoke.Run(connectionString);
     await HttpSmoke.Run(connectionString, useHttps: true);
     Console.WriteLine("PASS: SQL injection payloads, importer, recipe credential transport/errors, production diagnostic.");

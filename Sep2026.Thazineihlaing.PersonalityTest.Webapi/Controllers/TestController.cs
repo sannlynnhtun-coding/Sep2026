@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Sep2026.Thazineihlaing.PersonalityTest.Database.AppDbContextModels;
@@ -34,6 +34,8 @@ namespace Sep2026.Thazineihlaing.PersonalityTest.Webapi.Controllers
         [HttpPost("{id}/submit")]
         public IActionResult SubmitTest(int id)
         {
+            using var transaction = _db.Database.BeginTransaction();
+            _db.Database.ExecuteSqlInterpolated($"SELECT TestId FROM [Test] WITH (UPDLOCK, HOLDLOCK) WHERE TestId = {id}");
             var test = _db.Tests.FirstOrDefault(x => x.TestId == id);
 
             if (test == null)
@@ -52,7 +54,7 @@ namespace Sep2026.Thazineihlaing.PersonalityTest.Webapi.Controllers
             var answers = _db.UserAnswers.Include(x => x.AnswerOption).Where(x => x.TestId == id).ToList();
 
            
-            if (answers.Count != totalQuestions)
+            if (answers.Count != totalQuestions || answers.Select(x => x.QuestionId).Distinct().Count() != totalQuestions)
             {
                 return BadRequest(
                     $"Please answer all questions. Answered: {answers.Count}/{totalQuestions}"
@@ -78,6 +80,7 @@ namespace Sep2026.Thazineihlaing.PersonalityTest.Webapi.Controllers
             test.ResultPersonalityTypeId = result.PersonalityTypeId;
 
             _db.SaveChanges();
+            transaction.Commit();
 
             var personality = _db.PersonalityTypes
                 .FirstOrDefault(x =>

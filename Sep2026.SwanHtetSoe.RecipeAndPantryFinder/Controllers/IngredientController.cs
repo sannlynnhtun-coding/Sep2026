@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Sep2026.RecipeAndPantryFinder.Models.Request;
 using Sep2026.RecipeAndPantryFinder.Services;
@@ -34,16 +35,31 @@ public class IngredientController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateIngredient(int recipeId, IngredientCreateRequestModel request)
+    public async Task<IActionResult> CreateIngredient([FromQuery, Range(1, int.MaxValue)] int recipeId, IngredientCreateRequestModel request)
     {
-        var id = await _ingredientService.CreateIngredientAsync(recipeId, request);
-        return Ok(new { Message = "Ingredient created successfully.", Id = id });
+        try
+        {
+            var id = await _ingredientService.CreateIngredientAsync(recipeId, request);
+            return Ok(new { Message = "Ingredient created successfully.", Id = id });
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return NotFound(exception.Message);
+        }
     }
 
     [HttpPatch("{id}")]
     public async Task<IActionResult> UpdateIngredient(int id,IngredientUpdateRequestModel request)
     {
-        var updated = await _ingredientService.UpdateIngredientAsync(id, request);
+        bool updated;
+        try
+        {
+            updated = await _ingredientService.UpdateIngredientAsync(id, request);
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return NotFound(exception.Message);
+        }
         if (!updated)
         {
             return NotFound($"Ingredient with id {id} not found");

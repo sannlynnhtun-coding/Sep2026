@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using Sep2026.Thazineihlaing.PersonalityTest.Database.AppDbContextModels;
 using Sep2026.Thazineihlaing.PersonalityTest.Webapi.Models;
 
@@ -18,6 +19,8 @@ namespace Sep2026.Thazineihlaing.PersonalityTest.Webapi.Controllers
         [HttpPost]
         public IActionResult CreateAnswer(UserAnswerCreateRequestModel requestModel)
         {
+            using var transaction = _db.Database.BeginTransaction();
+            _db.Database.ExecuteSqlInterpolated($"SELECT TestId FROM [Test] WITH (UPDLOCK, HOLDLOCK) WHERE TestId = {requestModel.TestId}");
             var test = _db.Tests.FirstOrDefault(x => x.TestId == requestModel.TestId);
 
             if (test is null)
@@ -25,6 +28,9 @@ namespace Sep2026.Thazineihlaing.PersonalityTest.Webapi.Controllers
 
             if (test.ResultPersonalityTypeId != null)
                 return BadRequest("Test already completed.");
+
+            if (_db.UserAnswers.Any(x => x.TestId == requestModel.TestId && x.QuestionId == requestModel.QuestionId))
+                return Conflict("This question already has an answer for this test.");
 
             var answer = _db.AnswerOptions.FirstOrDefault(
                 x => x.AnswerOptionId == requestModel.AnswerOptionId
@@ -43,6 +49,7 @@ namespace Sep2026.Thazineihlaing.PersonalityTest.Webapi.Controllers
             _db.UserAnswers.Add(userAnswer);
 
             int result = _db.SaveChanges();
+            transaction.Commit();
 
             return Ok(result > 0? "Save Answer Successful.": "Save Answer Failed.");
         }

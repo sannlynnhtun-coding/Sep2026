@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -32,6 +33,8 @@ static class HttpSmoke
         if (useHttps) builder.Services.AddHttpsRedirection(_ => { });
         builder.Services.AddDbContext<PantryContext>(options => options.UseSqlServer(connectionString));
         builder.Services.AddScoped<IRecipeService, RecipeService>();
+        builder.Services.AddScoped<IIngredientService, IngredientService>();
+        builder.Services.AddScoped<IPantryService, PantryService>();
         var upstream = new RecipeHandler();
         builder.Services.AddHttpClient<SpoonacularService>().ConfigurePrimaryHttpMessageHandler(() => upstream);
         await using var app = builder.Build();
@@ -85,14 +88,38 @@ static class HttpSmoke
             calls = upstream.RequestCount;
             var local = await Get("/api/Recipe", HttpStatusCode.OK);
             Assert(local.GetArrayLength() == 0 && upstream.RequestCount == calls, "Local CRUD route changed.");
+            await Send(HttpMethod.Post, "/api/Recipe", new { title = " ", instructions = "Cook", servings = 1 }, HttpStatusCode.BadRequest);
+            await Send(HttpMethod.Post, "/api/Recipe", new { title = "Valid", instructions = "Cook", servings = 0 }, HttpStatusCode.BadRequest);
+            await Send(HttpMethod.Post, "/api/Pantry", new { itemName = "Pasta", quantity = -1, unit = "cup" }, HttpStatusCode.BadRequest);
+            var ingredientBody = new { ingredientName = "Salt", amount = 1, unit = "tsp" };
+            await Send(HttpMethod.Post, "/api/Ingredient?recipeId=0", ingredientBody, HttpStatusCode.BadRequest);
+            await Send(HttpMethod.Post, "/api/Ingredient?recipeId=2147483647", ingredientBody, HttpStatusCode.NotFound);
+            var created = await Send(HttpMethod.Post, "/api/Recipe", new { title = "Local", instructions = "Cook", servings = 1 }, HttpStatusCode.OK);
+            int recipeId = created.GetProperty("recipeId").GetInt32();
+            var added = await Send(HttpMethod.Post, $"/api/Ingredient?recipeId={recipeId}", ingredientBody, HttpStatusCode.OK);
+            int ingredientId = added.GetProperty("id").GetInt32();
+            await Send(HttpMethod.Patch, $"/api/Ingredient/{ingredientId}", new { recipeId = int.MaxValue, ingredientName = "Changed" }, HttpStatusCode.NotFound);
+            await Send(HttpMethod.Patch, $"/api/Ingredient/{ingredientId}", new { amount = -1 }, HttpStatusCode.BadRequest);
+            var retained = await Get($"/api/Ingredient/{ingredientId}", HttpStatusCode.OK);
+            Assert(retained.GetProperty("ingredientName").GetString() == "Salt", "Invalid ingredient move changed existing data.");
+            await Send(HttpMethod.Delete, $"/api/Ingredient/{ingredientId}", null, HttpStatusCode.OK);
+            await Send(HttpMethod.Delete, $"/api/Recipe/{recipeId}", null, HttpStatusCode.OK);
+            Assert(upstream.RequestCount == calls, "Local CRUD used the upstream service.");
+            Console.WriteLine($"PASS: {scheme.ToUpperInvariant()} local CRUD validation, missing parents, and unchanged data after rejected moves.");
             Console.WriteLine($"PASS: loopback {scheme.ToUpperInvariant()} Spoonacular routes, validation, mappings, errors, and local-route separation.");
 
-            async Task<JsonElement> Get(string path, HttpStatusCode expected)
+            Task<JsonElement> Get(string path, HttpStatusCode expected) => Send(HttpMethod.Get, path, null, expected);
+
+            async Task<JsonElement> Send(HttpMethod method, string path, object? payload, HttpStatusCode expected)
             {
-                using var response = await client.GetAsync(path);
+                using var request = new HttpRequestMessage(method, path);
+                if (payload != null) request.Content = JsonContent.Create(payload);
+                using var response = await client.SendAsync(request);
                 string body = await response.Content.ReadAsStringAsync();
                 Assert(response.StatusCode == expected, $"{path}: expected {(int)expected}, got {(int)response.StatusCode}.");
                 Assert(!body.Contains("test-only") && !body.Contains("StackTrace") && !body.Contains("HttpRequestException"), "Response exposed internal details.");
+                if (!string.IsNullOrWhiteSpace(body) && response.Content.Headers.ContentType?.MediaType?.Contains("json") != true)
+                    body = JsonSerializer.Serialize(body);
                 using var document = JsonDocument.Parse(string.IsNullOrWhiteSpace(body) ? "null" : body);
                 return document.RootElement.Clone();
             }
