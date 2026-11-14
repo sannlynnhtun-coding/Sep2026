@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,8 +27,11 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<UserAnswer> UserAnswers { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=.\\SQLEXPRESS;Database=Sept2026Db;User ID=sa;Password=sasa@123;TrustServerCertificate=True;");
+    {
+        if (!optionsBuilder.IsConfigured)
+            optionsBuilder.UseSqlServer(Environment.GetEnvironmentVariable("ConnectionStrings__PersonalityTestDb")
+                ?? "Server=.;Database=Sept2026Db;Integrated Security=True;TrustServerCertificate=True;");
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -5,5 +5,5 @@ public class MagicNumberCardItem
     public int CardItemId { get; set; }
     public int CardId { get; set; }
     public int Number { get; set; }
-    public MagicNumberCard Card { get; set; } = null;
+    public MagicNumberCard Card { get; set; } = null!;
 }

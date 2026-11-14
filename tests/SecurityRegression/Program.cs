@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -71,12 +72,28 @@ try
         ["Spoonacular:ApiKey"] = "test-only",
         ["ConnectionStrings:DefaultConnection"] = connectionString
     }).Build();
-    using var pantry = new PantryContext();
+    using var pantry = new PantryContext(new DbContextOptionsBuilder<PantryContext>().UseSqlServer(connectionString).Options);
     var handler = new RecipeHandler();
     using var client = new HttpClient(handler);
-    var recipes = new RecipeService(client, settings, pantry);
+    var recipes = new SpoonacularService(client, settings, pantry);
     await recipes.GetRecipesAsync("pasta&apiKey=injected", 10);
     Assert(handler.Uri!.Query.Contains("pasta%26apiKey%3Dinjected") && !handler.Uri.Query.Contains("test-only"), "Recipe key or query leaked into the URL.");
+    handler.Body = """{"results":[{"id":42,"title":"Pasta","readyInMinutes":20,"servings":2}]}""";
+    var found = await recipes.GetRecipesAsync("pasta", 1);
+    Assert(found.Single().RecipeId == 42 && found[0].Title == "Pasta", "Upstream search mapping failed.");
+    handler.Body = """{"id":42,"title":"Pasta","instructions":"<p>Cook &amp; serve.</p>","extendedIngredients":[{"id":123,"name":"pasta","amount":2,"unit":"cups"}]}""";
+    var detail = await recipes.GetRecipeByIdAsync(42);
+    Assert(detail!.Instructions == "Cook & serve." && detail.Ingredients.Single().Amount == 2, "Recipe detail mapping failed.");
+    var ingredients = await recipes.GetIngredientsByRecipeIdAsync(42);
+    Assert(ingredients?.Single() is { IngredientName: "pasta", Id: 123 }, "Ingredient mapping failed.");
+    handler.Status = HttpStatusCode.NotFound;
+    Assert(await recipes.GetRecipeByIdAsync(42) == null && await recipes.GetIngredientsByRecipeIdAsync(42) == null,
+        "Upstream 404 must remain not found.");
+    handler.Status = HttpStatusCode.OK;
+    await new SqlCommand("CREATE TABLE PantryItems (PantryItemId int PRIMARY KEY, ItemName nvarchar(100), Quantity decimal(10,2), Unit nvarchar(50)); INSERT PantryItems VALUES (1, 'pasta', 1, 'cup');", db).ExecuteNonQueryAsync();
+    handler.Body = """[{"id":42,"title":"Pasta","usedIngredients":[{"name":"pasta"}],"missedIngredients":[{"name":"salt"}]}]""";
+    var matched = await recipes.SearchRecipesByPantryAsync();
+    Assert(matched.Single().MatchedIngredientCount == 1 && matched[0].MissingIngredients.Single() == "salt", "Pantry search mapping failed.");
     handler.Status = HttpStatusCode.InternalServerError;
     try { await recipes.GetRecipeByIdAsync(1); throw new Exception("Upstream failure was accepted."); }
     catch (HttpRequestException ex) { Assert(!ex.Message.Contains("sensitive-upstream-body"), "Upstream body leaked."); }
@@ -103,11 +120,12 @@ sealed class RecipeHandler : HttpMessageHandler
 {
     public Uri? Uri { get; private set; }
     public HttpStatusCode Status { get; set; } = HttpStatusCode.OK;
+    public string Body { get; set; } = "{\"results\":[]}";
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         if (request.Headers.GetValues("x-api-key").Single() != "test-only") throw new Exception("Missing key header.");
         Uri = request.RequestUri;
-        return Task.FromResult(new HttpResponseMessage(Status) { Content = new StringContent(Status == HttpStatusCode.OK ? "{\"results\":[]}" : "sensitive-upstream-body") });
+        return Task.FromResult(new HttpResponseMessage(Status) { Content = new StringContent(Status == HttpStatusCode.OK ? Body : "sensitive-upstream-body") });
     }
 }
 

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Sep2026.ConsoleApp3;
 using Sep2026.ReceipeDb.Models;
 
-string[] keys = ["ConnectionStrings__DefaultConnection", "ConnectionStrings__Sep2026Db"];
+string[] keys = ["ConnectionStrings__DefaultConnection", "ConnectionStrings__Sep2026Db", "ConnectionStrings__PersonalityTestDb"];
 var original = keys.Select(Environment.GetEnvironmentVariable).ToArray();
 try
 {
@@ -34,6 +34,8 @@ static void Check(string server)
     }
     using var context = new AppDbContext();
     AssertConnection(new SqlConnectionStringBuilder(context.Database.GetConnectionString()), server);
+    using var personality = new Sep2026.Thazineihlaing.PersonalityTest.Database.AppDbContextModels.AppDbContext();
+    AssertConnection(new SqlConnectionStringBuilder(personality.Database.GetConnectionString()), server);
 }
 
 static void AssertConnection(SqlConnectionStringBuilder connection, string server)
