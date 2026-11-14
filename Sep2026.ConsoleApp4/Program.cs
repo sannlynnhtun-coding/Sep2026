@@ -5,14 +5,9 @@ using System.Data;
 
 Console.WriteLine("Hello, World!");
 
-SqlConnectionStringBuilder sqlConnectionStringBuilder = new SqlConnectionStringBuilder()
-{
-    DataSource = ".",
-    InitialCatalog = "Sep2026Db",
-    UserID = "sa",
-    Password = "sasa@123",
-    TrustServerCertificate = true
-};
+SqlConnectionStringBuilder sqlConnectionStringBuilder = new SqlConnectionStringBuilder(
+    Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+    ?? "Server=.;Database=Sep2026Db;Integrated Security=True;TrustServerCertificate=True;");
 
 //SqlConnection connection = new SqlConnection(sqlConnectionStringBuilder.ConnectionString);
 //connection.Open();

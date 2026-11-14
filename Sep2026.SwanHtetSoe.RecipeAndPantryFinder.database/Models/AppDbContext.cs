@@ -20,7 +20,8 @@ public class AppDbContext : DbContext
         if (!optionsBuilder.IsConfigured)
         {
             optionsBuilder.UseSqlServer(
-                "Server=.;Database=Sep2026Db;User ID=sa;Password=sasa@123;TrustServerCertificate=True;");
+                Environment.GetEnvironmentVariable("ConnectionStrings__Sep2026Db")
+                ?? "Server=.;Database=Sep2026Db;Integrated Security=True;TrustServerCertificate=True;");
         }
     }
 

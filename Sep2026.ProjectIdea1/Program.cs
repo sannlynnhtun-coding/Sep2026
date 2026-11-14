@@ -10,14 +10,9 @@ string jsonContent = File.ReadAllText("C:\\Users\\Sann Lynn Htun\\Downloads\\Min
 
 QuestionAnswerResponseModel responseModel = JsonSerializer.Deserialize<QuestionAnswerResponseModel>(jsonContent)!;
 
-SqlConnectionStringBuilder connectionStringBuilder = new SqlConnectionStringBuilder
-{
-    DataSource = ".",
-    InitialCatalog = "Sep2026Db",
-    UserID = "sa",
-    Password = "sasa@123",
-    TrustServerCertificate = true
-};
+SqlConnectionStringBuilder connectionStringBuilder = new SqlConnectionStringBuilder(
+    Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+    ?? "Server=.;Database=Sep2026Db;Integrated Security=True;TrustServerCertificate=True;");
 IDbConnection connection = new SqlConnection(connectionStringBuilder.ConnectionString);
 connection.Open();
 
