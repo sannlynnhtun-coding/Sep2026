@@ -1,149 +1,119 @@
-using System.Net;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
+using Sep2026.RecipeAndPantryFinder.Models.Request;
 using Sep2026.RecipeAndPantryFinder.Models.Response;
 using Sep2026.ReceipeDb.Models;
 
 namespace Sep2026.RecipeAndPantryFinder.Services;
 
-
 public class RecipeService : IRecipeService
 {
-    private readonly HttpClient _httpClient;
-    private readonly IConfiguration _configuration;
     private readonly AppDbContext _db;
 
-    public RecipeService(HttpClient httpClient, IConfiguration configuration, AppDbContext db)
+    public RecipeService(AppDbContext db)
     {
-        _httpClient = httpClient;
-        _configuration = configuration;
         _db = db;
     }
 
-    private (string BaseUrl, string ApiKey) GetConfig()
+    public async Task<List<RecipeResponseModel>> GetRecipesAsync()
     {
-        var baseUrl = _configuration["Spoonacular:BaseUrl"];
-        var apiKey = _configuration["Spoonacular:ApiKey"];
-
-        if (string.IsNullOrWhiteSpace(baseUrl) || string.IsNullOrWhiteSpace(apiKey))
-        {
-            throw new Exception("Configure Spoonacular__BaseUrl and Spoonacular__ApiKey in the environment or another configuration provider.");
-        }
-
-        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var endpoint) || endpoint.Scheme != Uri.UriSchemeHttps)
-            throw new InvalidOperationException("Spoonacular BaseUrl must use HTTPS.");
-
-        return (baseUrl.TrimEnd('/'), apiKey);
-    }
-
-    public async Task<List<RecipeResponseModel>> GetRecipesAsync(string? query, int number)
-    {
-        var (baseUrl, apiKey) = GetConfig();
-
-        var url = $"{baseUrl}/recipes/complexSearch?number={number}&addRecipeInformation=true";
-        if (!string.IsNullOrWhiteSpace(query))
-        {
-            url += $"&query={Uri.EscapeDataString(query)}";
-        }
-
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Add("x-api-key", apiKey);
-        using var response = await _httpClient.SendAsync(request);
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new HttpRequestException($"Spoonacular search failed with HTTP {(int)response.StatusCode}.");
-        }
-
-        var json = await response.Content.ReadAsStringAsync();
-        using var doc = JsonDocument.Parse(json);
-
-        if (!doc.RootElement.TryGetProperty("results", out var resultsEl) ||
-            resultsEl.ValueKind != JsonValueKind.Array)
-        {
-            return new List<RecipeResponseModel>();
-        }
-
-        return resultsEl.EnumerateArray()
+        return await _db.Recipes
+            .OrderBy(r => r.RecipeId)
             .Select(r => new RecipeResponseModel
             {
-                RecipeId = r.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.Number
-                    ? idEl.GetInt32()
-                    : 0,
-                Title = r.TryGetProperty("title", out var tEl) ? tEl.GetString() ?? "" : "",
-                ReadyInMinutes = r.TryGetProperty("readyInMinutes", out var rimEl) &&
-                                 rimEl.ValueKind == JsonValueKind.Number
-                    ? rimEl.GetInt32()
-                    : 0,
-                Servings = r.TryGetProperty("servings", out var svEl) &&
-                           svEl.ValueKind == JsonValueKind.Number
-                    ? svEl.GetInt32()
-                    : 0
+                RecipeId = r.RecipeId,
+                Title = r.Title,
+                ReadyInMinutes = r.ReadyInMinutes,
+                Servings = r.Servings
             })
-            .ToList();
-    }
-
-    private async Task<string?> FetchRecipeInfoJsonAsync(int id)
-    {
-        var (baseUrl, apiKey) = GetConfig();
-        var url = $"{baseUrl}/recipes/{id}/information";
-
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Add("x-api-key", apiKey);
-        using var response = await _httpClient.SendAsync(request);
-        if (response.StatusCode == HttpStatusCode.NotFound)
-        {
-            return null;
-        }
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new HttpRequestException($"Spoonacular recipe info failed with HTTP {(int)response.StatusCode}.");
-        }
-
-        return await response.Content.ReadAsStringAsync();
+            .ToListAsync();
     }
 
     public async Task<RecipeDetailResponseModel?> GetRecipeByIdAsync(int id)
     {
-        var json = await FetchRecipeInfoJsonAsync(id);
-        if (json == null)
-        {
-            return null;
-        }
+        var recipe = await _db.Recipes
+            .Include(r => r.RecipeIngredients)
+            .FirstOrDefaultAsync(r => r.RecipeId == id);
 
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
+        if (recipe == null) return null;
 
         return new RecipeDetailResponseModel
         {
-            RecipeId = root.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.Number
-                ? idEl.GetInt32()
-                : id,
-            Title = root.TryGetProperty("title", out var tEl) ? tEl.GetString() ?? "" : "",
-            Instructions = StripHtml(
-                root.TryGetProperty("instructions", out var insEl) ? insEl.GetString() : null),
-            ReadyInMinutes = root.TryGetProperty("readyInMinutes", out var rimEl) &&
-                             rimEl.ValueKind == JsonValueKind.Number
-                ? rimEl.GetInt32()
-                : 0,
-            Servings = root.TryGetProperty("servings", out var svEl) &&
-                       svEl.ValueKind == JsonValueKind.Number
-                ? svEl.GetInt32()
-                : 0,
-            Ingredients = MapIngredients(root)
+            RecipeId = recipe.RecipeId,
+            Title = recipe.Title,
+            Instructions = recipe.Instructions,
+            ReadyInMinutes = recipe.ReadyInMinutes,
+            Servings = recipe.Servings,
+            Ingredients = recipe.RecipeIngredients
+                .Select(i => new IngredientResponseModel
+                {
+                    Id = i.Id,
+                    IngredientName = i.IngredientName,
+                    Amount = i.Amount,
+                    Unit = i.Unit
+                })
+                .ToList()
         };
     }
 
-    public async Task<List<IngredientResponseModel>?> GetIngredientsByRecipeIdAsync(int id)
+    public async Task<int> CreateRecipeAsync(RecipeCreateRequestModel request)
     {
-        var json = await FetchRecipeInfoJsonAsync(id);
-        if (json == null)
+        var recipe = new Recipe
         {
-            return null;
+            Title = request.Title.Trim(),
+            Instructions = request.Instructions.Trim(),
+            ReadyInMinutes = request.ReadyInMinutes,
+            Servings = request.Servings
+        };
+
+        _db.Recipes.Add(recipe);
+        await _db.SaveChangesAsync();
+
+        return recipe.RecipeId;
+    }
+
+    public async Task<bool> UpdateRecipeAsync(int id, RecipeUpdateRequestModel request)
+    {
+        var recipe = await _db.Recipes.FirstOrDefaultAsync(r => r.RecipeId == id);
+        if (recipe == null)
+        {
+            return false;
         }
 
-        using var doc = JsonDocument.Parse(json);
-        return MapIngredients(doc.RootElement);
+        if (!string.IsNullOrWhiteSpace(request.Title))
+        {
+            recipe.Title = request.Title.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Instructions))
+        {
+            recipe.Instructions = request.Instructions.Trim();
+        }
+
+        if (request.ReadyInMinutes.HasValue && request.ReadyInMinutes.Value >= 0)
+        {
+            recipe.ReadyInMinutes = request.ReadyInMinutes.Value;
+        }
+
+        if (request.Servings.HasValue && request.Servings.Value > 0)
+        {
+            recipe.Servings = request.Servings.Value;
+        }
+
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteRecipeAsync(int id)
+    {
+        var recipe = await _db.Recipes.FirstOrDefaultAsync(r => r.RecipeId == id);
+        if (recipe == null)
+        {
+            return false;
+        }
+
+        _db.Recipes.Remove(recipe);
+        await _db.SaveChangesAsync();
+        return true;
     }
 
     public async Task<List<RecipeSearchResponseModel>> SearchRecipesByPantryAsync()
@@ -155,154 +125,39 @@ public class RecipeService : IRecipeService
             throw new InvalidOperationException(
                 "Pantry is empty. Please add items to your pantry first.");
         }
+        var pantryNames = pantryItems
+            .Select(p => p.ItemName.Trim().ToLower())
+            .ToList();
 
-        var (baseUrl, apiKey) = GetConfig();
+        var allRecipes = await _db.Recipes
+            .Include(r => r.RecipeIngredients)
+            .ToListAsync();
 
-        var ingredients = string.Join(",", pantryItems.Select(p => Uri.EscapeDataString(p.ItemName.Trim())));
-        var url = $"{baseUrl}/recipes/findByIngredients?ingredients={ingredients}&number=10";
-
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Add("x-api-key", apiKey);
-        using var response = await _httpClient.SendAsync(request);
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new HttpRequestException($"Spoonacular findByIngredients failed with HTTP {(int)response.StatusCode}.");
-        }
-
-        var json = await response.Content.ReadAsStringAsync();
-        using var doc = JsonDocument.Parse(json);
-
-        if (doc.RootElement.ValueKind != JsonValueKind.Array)
-        {
-            return new List<RecipeSearchResponseModel>();
-        }
-
-        return doc.RootElement.EnumerateArray()
+        return allRecipes
             .Select(r =>
             {
-                var usedNames = r.TryGetProperty("usedIngredients", out var u) && u.ValueKind == JsonValueKind.Array
-                    ? u.EnumerateArray()
-                        .Select(x => x.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "")
-                        .ToList()
-                    : new List<string>();
+                var ingredientNames = r.RecipeIngredients
+                    .Select(i => i.IngredientName.Trim().ToLower())
+                    .ToList();
 
-                var missedNames = r.TryGetProperty("missedIngredients", out var m) && m.ValueKind == JsonValueKind.Array
-                    ? m.EnumerateArray()
-                        .Select(x => x.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "")
-                        .ToList()
-                    : new List<string>();
+                var matchedCount = ingredientNames
+                    .Count(name => pantryNames.Any(p => name.Contains(p) || p.Contains(name)));
+
+                var missingIngredients = ingredientNames
+                    .Where(name => !pantryNames.Any(p => name.Contains(p) || p.Contains(name)))
+                    .ToList();
 
                 return new RecipeSearchResponseModel
                 {
-                    RecipeId = r.TryGetProperty("id", out var idEl) && idEl.ValueKind == JsonValueKind.Number
-                        ? idEl.GetInt32()
-                        : 0,
-                    Title = r.TryGetProperty("title", out var tEl) ? tEl.GetString() ?? "" : "",
-                    MatchedIngredientCount = usedNames.Count,
-                    TotalIngredientCount = usedNames.Count + missedNames.Count,
-                    MissingIngredients = missedNames
+                    RecipeId = r.RecipeId,
+                    Title = r.Title,
+                    MatchedIngredientCount = matchedCount,
+                    TotalIngredientCount = ingredientNames.Count,
+                    MissingIngredients = missingIngredients
                 };
             })
-            .OrderByDescending(x => x.MatchedIngredientCount)
+            .Where(r => r.MatchedIngredientCount > 0)
+            .OrderByDescending(r => r.MatchedIngredientCount)
             .ToList();
-    }
-
-    private static List<IngredientResponseModel> MapIngredients(JsonElement root)
-    {
-        if (!root.TryGetProperty("extendedIngredients", out var ingEl) ||
-            ingEl.ValueKind != JsonValueKind.Array)
-        {
-            return new List<IngredientResponseModel>();
-        }
-
-        return ingEl.EnumerateArray()
-            .Select(i => new IngredientResponseModel
-            {
-                IngredientName = i.TryGetProperty("name", out var n) ? n.GetString() ?? "" : "",
-                Amount = GetIngredientAmount(i),
-                Unit = GetIngredientUnit(i)
-            })
-            .ToList();
-    }
-
-    private static string StripHtml(string? s)
-    {
-        if (string.IsNullOrWhiteSpace(s))
-        {
-            return "";
-        }
-
-        // Replace block/list item closers and <br> with a space (single-line output).
-        var withSpaces = Regex.Replace(s, @"</(li|p|div|ul|ol|h[1-6])>", " ", RegexOptions.IgnoreCase);
-        withSpaces = Regex.Replace(withSpaces, @"<br\s*/?>", " ", RegexOptions.IgnoreCase);
-
-        var noTags = Regex.Replace(withSpaces, @"<[^>]*>", "");
-
-        // Collapse all whitespace runs (including any newlines) into a single space.
-        noTags = Regex.Replace(noTags, @"\s+", " ");
-
-        return WebUtility.HtmlDecode(noTags).Trim();
-    }
-
-    private static decimal GetIngredientAmount(JsonElement ing)
-    {
-        if (ing.TryGetProperty("amount", out var a) && a.ValueKind == JsonValueKind.Number)
-        {
-            return a.GetDecimal();
-        }
-
-        if (ing.TryGetProperty("measures", out var m) && m.ValueKind == JsonValueKind.Object)
-        {
-            if (m.TryGetProperty("us", out var us) && us.ValueKind == JsonValueKind.Object &&
-                us.TryGetProperty("amount", out var ua) && ua.ValueKind == JsonValueKind.Number)
-            {
-                return ua.GetDecimal();
-            }
-
-            if (m.TryGetProperty("metric", out var met) && met.ValueKind == JsonValueKind.Object &&
-                met.TryGetProperty("amount", out var ma) && ma.ValueKind == JsonValueKind.Number)
-            {
-                return ma.GetDecimal();
-            }
-        }
-
-        return 0m;
-    }
-
-    private static string GetIngredientUnit(JsonElement ing)
-    {
-        if (ing.TryGetProperty("unit", out var u) && u.ValueKind == JsonValueKind.String)
-        {
-            return u.GetString() ?? "";
-        }
-
-        if (ing.TryGetProperty("unitLong", out var ul) && ul.ValueKind == JsonValueKind.String)
-        {
-            return ul.GetString() ?? "";
-        }
-
-        if (ing.TryGetProperty("measures", out var m) && m.ValueKind == JsonValueKind.Object)
-        {
-            if (m.TryGetProperty("us", out var us) && us.ValueKind == JsonValueKind.Object)
-            {
-                if (us.TryGetProperty("unitLong", out var uul) && uul.ValueKind == JsonValueKind.String)
-                {
-                    return uul.GetString() ?? "";
-                }
-
-                if (us.TryGetProperty("unitShort", out var uss) && uss.ValueKind == JsonValueKind.String)
-                {
-                    return uss.GetString() ?? "";
-                }
-            }
-
-            if (m.TryGetProperty("metric", out var met) && met.ValueKind == JsonValueKind.Object &&
-                met.TryGetProperty("unitLong", out var mul) && mul.ValueKind == JsonValueKind.String)
-            {
-                return mul.GetString() ?? "";
-            }
-        }
-
-        return "";
     }
 }

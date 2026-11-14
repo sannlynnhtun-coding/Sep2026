@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+using Sep2026.RecipeAndPantryFinder.Models.Request;
 using Sep2026.RecipeAndPantryFinder.Services;
 
 namespace Sep2026.RecipeAndPantryFinder.Controllers;
@@ -16,10 +17,9 @@ public class RecipeController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetRecipes([FromQuery] string? query, [FromQuery, Range(1, 100)] int? number)
+    public async Task<IActionResult> GetRecipes()
     {
-        int n = number is null or <= 0 ? 10 : number.Value;
-        var recipes = await _recipeService.GetRecipesAsync(query, n);
+        var recipes = await _recipeService.GetRecipesAsync();
         return Ok(recipes);
     }
 
@@ -39,5 +39,34 @@ public class RecipeController : ControllerBase
             return NotFound($"Recipe with id {id} not found.");
         }
         return Ok(recipe);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateRecipe(RecipeCreateRequestModel request)
+    {
+        var id = await _recipeService.CreateRecipeAsync(request);
+        return Ok(new { Message = "Recipe created successfully.", RecipeId = id });
+    }
+
+    [HttpPatch("{id}")]
+    public async Task<IActionResult> UpdateRecipe(int id, RecipeUpdateRequestModel request)
+    {
+        var updated = await _recipeService.UpdateRecipeAsync(id, request);
+        if (!updated)
+        {
+            return NotFound($"Recipe with id {id} not found.");
+        }
+        return Ok("Recipe updated successfully.");
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteRecipe(int id)
+    {
+        var deleted = await _recipeService.DeleteRecipeAsync(id);
+        if (!deleted)
+        {
+            return NotFound($"Recipe with id {id} not found.");
+        }
+        return Ok("Recipe deleted successfully.");
     }
 }
