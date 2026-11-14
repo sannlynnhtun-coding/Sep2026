@@ -14,7 +14,7 @@ public class AppDbContext : DbContext
     public virtual DbSet<MagicNumberCard> MagicNumberCards { get; set; }
     public virtual DbSet<MagicNumberCardItem> MagicNumberCardItems { get; set; }
 
-     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)        => optionsBuilder.UseSqlServer("Server=.;Database=sep_2026;User ID=sa;Password=sasa@123;TrustServerCertificate=True;");
+     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)        => optionsBuilder.UseSqlServer("Server=.;Database=sep_2026; ?? ;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
