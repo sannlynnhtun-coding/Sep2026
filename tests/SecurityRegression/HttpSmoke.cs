@@ -12,10 +12,15 @@ using PantryContext = Sep2026.ReceipeDb.Models.AppDbContext;
 
 static class HttpSmoke
 {
-    public static async Task Run(string connectionString)
+    public static async Task Run(string connectionString, bool useHttps = false)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Production" });
-        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.WebHost.ConfigureKestrel(options =>
+        {
+            options.Listen(IPAddress.Loopback, 0);
+            if (useHttps)
+                options.Listen(IPAddress.Loopback, 0, listener => listener.UseHttps());
+        });
         builder.Logging.ClearProviders();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
@@ -24,17 +29,31 @@ static class HttpSmoke
         });
         builder.Services.AddControllers().AddApplicationPart(typeof(SpoonacularController).Assembly);
         builder.Services.AddProblemDetails();
+        if (useHttps) builder.Services.AddHttpsRedirection(_ => { });
         builder.Services.AddDbContext<PantryContext>(options => options.UseSqlServer(connectionString));
         builder.Services.AddScoped<IRecipeService, RecipeService>();
         var upstream = new RecipeHandler();
         builder.Services.AddHttpClient<SpoonacularService>().ConfigurePrimaryHttpMessageHandler(() => upstream);
         await using var app = builder.Build();
         app.UseExceptionHandler();
+        if (useHttps) app.UseHttpsRedirection();
         app.MapControllers();
         await app.StartAsync();
         try
         {
-            using var client = new HttpClient { BaseAddress = new Uri(app.Urls.Single()), Timeout = TimeSpan.FromSeconds(15) };
+            string scheme = useHttps ? "https" : "http";
+            var address = new UriBuilder(app.Urls.Single(url => url.StartsWith(scheme + ":"))) { Host = "localhost" }.Uri;
+            // Default HttpClient certificate validation must remain enabled.
+            using var client = new HttpClient { BaseAddress = address, Timeout = TimeSpan.FromSeconds(15) };
+            if (useHttps)
+            {
+                using var redirects = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+                var plainAddress = new UriBuilder(app.Urls.Single(url => url.StartsWith("http:"))) { Host = "localhost" }.Uri;
+                using var redirect = await redirects.GetAsync(new Uri(plainAddress, "/api/spoonacular?number=1"));
+                Assert(redirect.StatusCode == HttpStatusCode.TemporaryRedirect &&
+                    redirect.Headers.Location == new Uri(address, "/api/spoonacular?number=1"), "HTTP-to-HTTPS redirect failed.");
+                Assert(upstream.RequestCount == 0, "HTTP redirect reached the upstream.");
+            }
             upstream.Body = """{"results":[{"id":42,"title":"Pasta","readyInMinutes":20,"servings":2}]}""";
             var search = await Get("/api/spoonacular?query=pasta%26apiKey%3Dinjected&number=1", HttpStatusCode.OK);
             Assert(search[0].GetProperty("recipeId").GetInt32() == 42, "Search mapping failed over HTTP.");
@@ -66,7 +85,7 @@ static class HttpSmoke
             calls = upstream.RequestCount;
             var local = await Get("/api/Recipe", HttpStatusCode.OK);
             Assert(local.GetArrayLength() == 0 && upstream.RequestCount == calls, "Local CRUD route changed.");
-            Console.WriteLine("PASS: loopback HTTP Spoonacular routes, validation, mappings, errors, and local-route separation.");
+            Console.WriteLine($"PASS: loopback {scheme.ToUpperInvariant()} Spoonacular routes, validation, mappings, errors, and local-route separation.");
 
             async Task<JsonElement> Get(string path, HttpStatusCode expected)
             {
