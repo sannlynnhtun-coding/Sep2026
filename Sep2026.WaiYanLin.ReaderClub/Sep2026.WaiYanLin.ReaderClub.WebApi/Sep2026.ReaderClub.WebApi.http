@@ -1,0 +1,6 @@
+@Sep2026.ReaderClub.WebApi_HostAddress = http://localhost:5079
+
+GET {{Sep2026.ReaderClub.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

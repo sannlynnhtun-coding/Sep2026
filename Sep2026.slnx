@@ -2,6 +2,8 @@
   <Folder Name="/Solution Items/">
     <File Path="README.md" />
   </Folder>
+  <Project Path="Sep2026.HnitThitMayKyaw.SupermarketPos.Database/Sep2026.HnitThitMayKyaw.SupermarketPos.Database.csproj" />
+  <Project Path="Sep2026.HnitThitMayKyaw.SupermarketPos.WebApi/Sep2026.HnitThitMayKyaw.SupermarketPos.WebApi.csproj" />
   <Project Path="Sep2026.AtmConsoleApp/Sep2026.AtmConsoleApp.csproj" Id="2b91e3e7-c54a-4eff-8e4e-b95c08e37aaf" />
   <Project Path="Sep2026.ConsoleApp/Sep2026.ConsoleApp.csproj" />
   <Project Path="Sep2026.ConsoleApp2/Sep2026.ConsoleApp2.csproj" Id="5a0ddc2e-1e55-4126-b7c5-a9176051d59f" />
@@ -9,9 +11,14 @@
   <Project Path="Sep2026.ConsoleApp4/Sep2026.ConsoleApp4.csproj" Id="b74132de-3560-4a18-bf95-b397ab5e6ec3" />
   <Project Path="Sep2026.ConsoleApp5.Database/Sep2026.ConsoleApp5.Database.csproj" Id="9db46fa9-6448-4acb-92f5-ceeb41ba4c39" />
   <Project Path="Sep2026.ConsoleApp5/Sep2026.ConsoleApp5.csproj" Id="21b6e168-8f94-4a9b-bb5e-61f9e1c4f42f" />
+  <Project Path="Sep2026.GameShopWebApi.Database/Sep2026.GameShopWebApi.Database.csproj" Id="052913a8-3516-455a-8548-fce07357e122" />
+  <Project Path="Sep2026.GameShopWebApi/Sep2026.GameShopWebApi.csproj" Id="f74008ca-4a24-42fe-9bd3-1eaacd44c938" />
+  <Project Path="Sep2026.Panyooneain_Movie Watchlist System/Sep2026.Panyooneain_Movie Watchlist System.csproj" />
   <Project Path="Sep2026.ProjectIdea1/Sep2026.ProjectIdea1.csproj" Id="46c2f53f-ebcd-4621-8f14-f9c198779ffb" />
   <Project Path="Sep2026.WebApi/Sep2026.WebApi.csproj" Id="f86b5941-3b5b-4788-b37a-a959feec321b" />
   <Project Path="Sep2026.WinFormsApp/Sep2026.WinFormsApp.csproj" Id="05a68eec-1614-43ae-9e5c-d413e7602178" />
+  <Project Path="Sep2026.ZodiacHoroscope.Database/Sep2026.ZodiacHoroscope.Database.csproj" />
+  <Project Path="Sep2026.ZodiacHoroscopeWebApi/Sep2026.ZodiacHoroscopeWebApi.csproj" />
   <Project Path="Sep2026.SwanHtetSoe.RecipeAndPantryFinder.database/Sep2026.SwanHtetSoe.RecipeAndPantryFinder.database.csproj" />
   <Project Path="Sep2026.SwanHtetSoe.RecipeAndPantryFinder/Sep2026.SwanHtetSoe.RecipeAndPantryFinder.csproj" />
 </Solution>

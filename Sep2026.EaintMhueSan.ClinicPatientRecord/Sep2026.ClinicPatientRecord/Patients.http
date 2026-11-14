@@ -1,0 +1,53 @@
+# API Base URL
+@baseUrl = https://localhost:7297
+
+
+### 1. GET - Get All Patients
+GET {{baseUrl}}/api/patients
+Accept: application/json
+
+
+### 2. GET - Get Patient By ID
+GET {{baseUrl}}/api/patients/2
+Accept: application/json
+
+
+### 3. POST - Register New Patient
+POST {{baseUrl}}/api/patients
+Content-Type: application/json
+
+{
+    "fullName": "Su Su Win",
+    "age": 25,
+    "gender": "Female",
+    "phone": "09123456789",
+    "address": "Hinthada, Myanmar"
+}
+
+
+### 4. PUT - Update Patient
+PUT {{baseUrl}}/api/patients/2
+Content-Type: application/json
+
+{
+    "fullName": "Su Su Win Updated",
+    "age": 26,
+    "gender": "Female",
+    "phone": "09123456789",
+    "address": "Yangon, Myanmar"
+}
+
+
+### 5. GET - Get All Doctors
+GET {{baseUrl}}/api/doctors
+Accept: application/json
+
+
+### Generate Token
+POST {{baseUrl}}/api/tokens
+Content-Type: application/json
+
+{
+    "patientID": 2,
+    "doctorID": 1
+}

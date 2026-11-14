@@ -16,8 +16,12 @@ builder.Services.AddScoped<IRecipeService, RecipeService>();
 builder.Services.AddScoped<IPantryService, PantryService>();
 builder.Services.AddScoped<IIngredientService, IngredientService>();
 
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
 
+if (!app.Environment.IsDevelopment())
+    app.UseExceptionHandler();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

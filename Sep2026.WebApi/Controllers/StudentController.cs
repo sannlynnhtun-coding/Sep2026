@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Sep2026.ConsoleApp5.Database.AppDbContextModels;
@@ -41,7 +41,7 @@ namespace Sep2026.WebApi.Controllers
         {
             _db.Students.Add(new Student
             {
-                ClassNo = requestModel.ClassNo.Trim(),
+                ClassNo = requestModel.ClassNo?.Trim(),
                 Name = requestModel.Name.Trim(),
                 No = requestModel.No.Trim(),
             });
@@ -61,7 +61,7 @@ namespace Sep2026.WebApi.Controllers
             }
 
             item.No = requestModel.No.Trim();
-            item.ClassNo = requestModel.ClassNo.Trim();
+            item.ClassNo = requestModel.ClassNo?.Trim();
             item.Name = requestModel.Name.Trim();
 
             int result = _db.SaveChanges();
@@ -86,7 +86,7 @@ namespace Sep2026.WebApi.Controllers
 
             if (requestModel.ClassNo != null && !requestModel.ClassNo.IsNullOrEmpty())
             {
-                item.ClassNo = requestModel.ClassNo.Trim();
+                item.ClassNo = requestModel.ClassNo?.Trim();
             }
 
             if (requestModel.Name != null && !requestModel.Name.IsNullOrEmpty())

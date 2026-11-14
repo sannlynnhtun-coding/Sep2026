@@ -1,0 +1,6 @@
+@Sep2026.HnitThitMayKyaw.SupermarketPos.WebApi_HostAddress = http://localhost:5186
+
+GET {{Sep2026.HnitThitMayKyaw.SupermarketPos.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

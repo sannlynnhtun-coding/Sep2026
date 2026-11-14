@@ -92,6 +92,7 @@ public class RecipeService : IRecipeService
         if (request.ReadyInMinutes.HasValue && request.ReadyInMinutes.Value >= 0)
         {
             recipe.ReadyInMinutes = request.ReadyInMinutes.Value;
+            throw new Exception($"Spoonacular recipe info failed ({response.StatusCode}): {body}");
         }
 
         if (request.Servings.HasValue && request.Servings.Value > 0)
@@ -125,10 +126,10 @@ public class RecipeService : IRecipeService
             throw new InvalidOperationException(
                 "Pantry is empty. Please add items to your pantry first.");
         }
-
         var pantryNames = pantryItems
             .Select(p => p.ItemName.Trim().ToLower())
             .ToList();
+        using var doc = JsonDocument.Parse(json);
 
         var allRecipes = await _db.Recipes
             .Include(r => r.RecipeIngredients)

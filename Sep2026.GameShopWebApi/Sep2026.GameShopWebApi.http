@@ -1,0 +1,6 @@
+@Sep2026.GameShopWebApi_HostAddress = http://localhost:5178
+
+GET {{Sep2026.GameShopWebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

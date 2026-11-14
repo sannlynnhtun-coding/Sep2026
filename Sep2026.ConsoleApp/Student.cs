@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,7 +24,7 @@ namespace Sep2026.ConsoleApp
 
         public int Age { get; set; } // properties
         public string Name { get; set; }
-        public string FatherName { get; private set; }
+        public string? FatherName { get; private set; }
         public decimal Fees { get; set; }
 
         private decimal fees2; // field

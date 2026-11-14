@@ -5,26 +5,22 @@ namespace Sep2026.ConsoleApp3
 {
     public class GradeService
     {
-        private SqlConnectionStringBuilder sqlConnectionStringBuilder = new SqlConnectionStringBuilder()
-        {
-            DataSource = ".",
-            InitialCatalog = "Sep2026Db",
-            UserID = "sa",
-            Password = "sasa@123",
-            TrustServerCertificate = true
-        };
+        private SqlConnectionStringBuilder sqlConnectionStringBuilder = new SqlConnectionStringBuilder(
+            Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+            ?? "Server=.;Database=Sep2026Db;Integrated Security=True;TrustServerCertificate=True;");
 
         // CREATE: find the student, then add their grade.
         public void RegisterGrade(string studentNo, string subject, int mark)
         {
-            SqlConnection connection = new SqlConnection(sqlConnectionStringBuilder.ConnectionString);
+            using SqlConnection connection = new SqlConnection(sqlConnectionStringBuilder.ConnectionString);
 
             connection.Open();
 
-            SqlCommand studentCommand = new SqlCommand(
-                $"SELECT [Id], [Name] FROM [dbo].[Students] WHERE [No] = '{studentNo}'", connection);
+            using SqlCommand studentCommand = new SqlCommand(
+                "SELECT [Id], [Name] FROM [dbo].[Students] WHERE [No] = @studentNo", connection);
+            studentCommand.Parameters.Add("@studentNo", SqlDbType.NVarChar, -1).Value = studentNo;
 
-            SqlDataAdapter studentAdapter = new SqlDataAdapter(studentCommand);
+            using SqlDataAdapter studentAdapter = new SqlDataAdapter(studentCommand);
             DataTable studentTable = new DataTable();
             studentAdapter.Fill(studentTable);
 
@@ -40,9 +36,12 @@ namespace Sep2026.ConsoleApp3
             int studentId = Convert.ToInt32(student["Id"]);
             string studentName = Convert.ToString(student["Name"]) ?? studentNo;
 
-            string query = $@"INSERT INTO [dbo].[Grades] ([StudentId], [Subject], [Mark])
-                                  VALUES ({studentId}, '{subject}', {mark})";
-            SqlCommand command = new SqlCommand(query, connection);
+            string query = @"INSERT INTO [dbo].[Grades] ([StudentId], [Subject], [Mark])
+                                  VALUES (@studentId, @subject, @mark)";
+            using SqlCommand command = new SqlCommand(query, connection);
+            command.Parameters.Add("@studentId", SqlDbType.Int).Value = studentId;
+            command.Parameters.Add("@subject", SqlDbType.NVarChar, -1).Value = subject;
+            command.Parameters.Add("@mark", SqlDbType.Int).Value = mark;
             command.ExecuteNonQuery();
 
             Console.WriteLine($"Grade registered successfully for student {studentName} in subject {subject} with mark {mark}.");
@@ -52,15 +51,15 @@ namespace Sep2026.ConsoleApp3
         // READ: display grades with student details.
         public void ShowGrades()
         {
-            SqlConnection connection = new SqlConnection(sqlConnectionStringBuilder.ConnectionString);
+            using SqlConnection connection = new SqlConnection(sqlConnectionStringBuilder.ConnectionString);
 
             connection.Open();
 
             const string query = @"SELECT g.[GradeId], s.[No], s.[Name], g.[Subject], g.[Mark]
                                   FROM [dbo].[Grades] g
                                   INNER JOIN [dbo].[Students] s ON s.[Id] = g.[StudentId]";
-            SqlCommand command = new SqlCommand(query, connection);
-            SqlDataAdapter adapter = new SqlDataAdapter(command);
+            using SqlCommand command = new SqlCommand(query, connection);
+            using SqlDataAdapter adapter = new SqlDataAdapter(command);
             DataTable table = new DataTable();
             adapter.Fill(table);
 
@@ -78,12 +77,13 @@ namespace Sep2026.ConsoleApp3
         // UPDATE: change a grade using its GradeId.
         public void UpdateGrade(int gradeId, string studentNo, string subject, int mark)
         {
-            SqlConnection connection = new SqlConnection(sqlConnectionStringBuilder.ConnectionString);
+            using SqlConnection connection = new SqlConnection(sqlConnectionStringBuilder.ConnectionString);
 
             connection.Open();
-            SqlCommand studentCommand = new SqlCommand(
-                $"SELECT [Id] FROM [dbo].[Students] WHERE [No] = '{studentNo}'", connection);
-            SqlDataAdapter studentAdapter = new SqlDataAdapter(studentCommand);
+            using SqlCommand studentCommand = new SqlCommand(
+                "SELECT [Id] FROM [dbo].[Students] WHERE [No] = @studentNo", connection);
+            studentCommand.Parameters.Add("@studentNo", SqlDbType.NVarChar, -1).Value = studentNo;
+            using SqlDataAdapter studentAdapter = new SqlDataAdapter(studentCommand);
             DataTable studentTable = new DataTable();
             studentAdapter.Fill(studentTable);
 
@@ -97,9 +97,13 @@ namespace Sep2026.ConsoleApp3
 
             int studentId = Convert.ToInt32(studentTable.Rows[0]["Id"]);
 
-            SqlCommand command = new SqlCommand($@"UPDATE [dbo].[Grades]
-                SET [StudentId] = {studentId}, [Subject] = '{subject}', [Mark] = {mark}
-                WHERE [GradeId] = {gradeId}", connection);
+            using SqlCommand command = new SqlCommand(@"UPDATE [dbo].[Grades]
+                SET [StudentId] = @studentId, [Subject] = @subject, [Mark] = @mark
+                WHERE [GradeId] = @gradeId", connection);
+            command.Parameters.Add("@studentId", SqlDbType.Int).Value = studentId;
+            command.Parameters.Add("@subject", SqlDbType.NVarChar, -1).Value = subject;
+            command.Parameters.Add("@mark", SqlDbType.Int).Value = mark;
+            command.Parameters.Add("@gradeId", SqlDbType.Int).Value = gradeId;
             int rows = command.ExecuteNonQuery();
             if (rows > 0)
             {
@@ -115,10 +119,11 @@ namespace Sep2026.ConsoleApp3
         // DELETE: remove a grade using its GradeId.
         public void DeleteGrade(int gradeId)
         {
-            SqlConnection connection = new SqlConnection(sqlConnectionStringBuilder.ConnectionString);
+            using SqlConnection connection = new SqlConnection(sqlConnectionStringBuilder.ConnectionString);
 
             connection.Open();
-            SqlCommand command = new SqlCommand($"DELETE FROM [dbo].[Grades] WHERE [GradeId] = {gradeId}", connection);
+            using SqlCommand command = new SqlCommand("DELETE FROM [dbo].[Grades] WHERE [GradeId] = @gradeId", connection);
+            command.Parameters.Add("@gradeId", SqlDbType.Int).Value = gradeId;
             int rows = command.ExecuteNonQuery();
             if (rows > 0)
             {

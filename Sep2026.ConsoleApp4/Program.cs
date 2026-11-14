@@ -1,18 +1,13 @@
-﻿// See https://aka.ms/new-console-template for more information
+// See https://aka.ms/new-console-template for more information
 using Dapper;
 using Microsoft.Data.SqlClient;
 using System.Data;
 
 Console.WriteLine("Hello, World!");
 
-SqlConnectionStringBuilder sqlConnectionStringBuilder = new SqlConnectionStringBuilder()
-{
-    DataSource = ".",
-    InitialCatalog = "Sep2026Db",
-    UserID = "sa",
-    Password = "sasa@123",
-    TrustServerCertificate = true
-};
+SqlConnectionStringBuilder sqlConnectionStringBuilder = new SqlConnectionStringBuilder(
+    Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+    ?? "Server=.;Database=Sep2026Db;Integrated Security=True;TrustServerCertificate=True;");
 
 //SqlConnection connection = new SqlConnection(sqlConnectionStringBuilder.ConnectionString);
 //connection.Open();
@@ -47,7 +42,7 @@ int result = db2.Execute("DELETE FROM [dbo].[Students] WHERE [Id] = 1");
 public class StudentDto
 {
     public int Id { get; set; }
-    public string No { get; set; }
-    public string Name { get; set; }
-    public string ClassNo { get; set; }
+    public string No { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string ClassNo { get; set; } = string.Empty;
 }
