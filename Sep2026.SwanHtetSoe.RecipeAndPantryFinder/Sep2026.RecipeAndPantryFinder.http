@@ -1,0 +1,58 @@
+@Sep2026.RecipeAndPantryFinder_HostAddress = http://localhost:5008
+
+### ---- Recipe: list from Spoonacular (complexSearch) ----
+GET {{Sep2026.RecipeAndPantryFinder_HostAddress}}/api/recipe?query=pasta&number=10
+Accept: application/json
+
+### ---- Recipe: detail + ingredients from Spoonacular ----
+GET {{Sep2026.RecipeAndPantryFinder_HostAddress}}/api/recipe/716429
+Accept: application/json
+
+### ---- Recipe: ingredient list only (name, amount, unit) ----
+GET {{Sep2026.RecipeAndPantryFinder_HostAddress}}/api/recipe/716429/ingredients
+Accept: application/json
+
+### ---- Recipe: search by pantry (Spoonacular findByIngredients) ----
+GET {{Sep2026.RecipeAndPantryFinder_HostAddress}}/api/recipe/search
+Accept: application/json
+
+### ---- Pantry: list all ----
+GET {{Sep2026.RecipeAndPantryFinder_HostAddress}}/api/pantry
+Accept: application/json
+
+### ---- Pantry: get by id ----
+GET {{Sep2026.RecipeAndPantryFinder_HostAddress}}/api/pantry/1
+Accept: application/json
+
+### ---- Pantry: create ----
+POST {{Sep2026.RecipeAndPantryFinder_HostAddress}}/api/pantry
+Content-Type: application/json
+
+{
+  "itemName": "egg",
+  "quantity": 3,
+  "unit": "piece"
+}
+
+### ---- Pantry: full update (PUT) ----
+PUT {{Sep2026.RecipeAndPantryFinder_HostAddress}}/api/pantry/1
+Content-Type: application/json
+
+{
+  "itemName": "egg",
+  "quantity": 5,
+  "unit": "piece"
+}
+
+### ---- Pantry: partial update (PATCH) — only change quantity ----
+PATCH {{Sep2026.RecipeAndPantryFinder_HostAddress}}/api/pantry/1
+Content-Type: application/json
+
+{
+  "quantity": 8
+}
+
+### ---- Pantry: delete ----
+DELETE {{Sep2026.RecipeAndPantryFinder_HostAddress}}/api/pantry/1
+
+###
