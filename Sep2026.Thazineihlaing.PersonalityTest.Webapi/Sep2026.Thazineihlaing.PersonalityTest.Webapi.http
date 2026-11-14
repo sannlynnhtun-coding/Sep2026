@@ -1,0 +1,6 @@
+@Sep2026.Thazineihlaing.PersonalityTest.Webapi_HostAddress = http://localhost:5072
+
+GET {{Sep2026.Thazineihlaing.PersonalityTest.Webapi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
