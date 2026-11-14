@@ -102,6 +102,8 @@ try
     catch (InvalidOperationException ex) { Assert(ex.Message.Contains("HTTPS"), "Unexpected configuration failure."); }
     var diagnostic = new DatabaseTestController(new DatabaseConnection(settings));
     Assert(await diagnostic.TestConnection(new TestEnvironment()) is NotFoundResult, "Production diagnostic must be hidden.");
+    await new SqlCommand("CREATE TABLE Recipes (RecipeId int PRIMARY KEY, Title nvarchar(200), Instructions nvarchar(max), ReadyInMinutes int, Servings int);", db).ExecuteNonQueryAsync();
+    await HttpSmoke.Run(connectionString);
     Console.WriteLine("PASS: SQL injection payloads, importer, recipe credential transport/errors, production diagnostic.");
 
     async Task<int> Count(string table) => Convert.ToInt32(await new SqlCommand("SELECT COUNT(*) FROM " + table, db).ExecuteScalarAsync());
@@ -118,11 +120,13 @@ static void Assert(bool condition, string message) { if (!condition) throw new E
 
 sealed class RecipeHandler : HttpMessageHandler
 {
+    public int RequestCount { get; private set; }
     public Uri? Uri { get; private set; }
     public HttpStatusCode Status { get; set; } = HttpStatusCode.OK;
     public string Body { get; set; } = "{\"results\":[]}";
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        RequestCount++;
         if (request.Headers.GetValues("x-api-key").Single() != "test-only") throw new Exception("Missing key header.");
         Uri = request.RequestUri;
         return Task.FromResult(new HttpResponseMessage(Status) { Content = new StringContent(Status == HttpStatusCode.OK ? Body : "sensitive-upstream-body") });
