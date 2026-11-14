@@ -1,0 +1,6 @@
+@Sep2026.ClinicPatientRecord_HostAddress = http://localhost:5242
+
+GET {{Sep2026.ClinicPatientRecord_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
