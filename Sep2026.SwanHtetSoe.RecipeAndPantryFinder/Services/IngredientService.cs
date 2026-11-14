@@ -81,6 +81,8 @@ public class IngredientService : IIngredientService
 
         if(request.RecipeId.HasValue && request.RecipeId.Value > 0)
         {
+            if (!await _db.Recipes.AnyAsync(r => r.RecipeId == request.RecipeId.Value))
+                throw new KeyNotFoundException($"Recipe with id {request.RecipeId.Value} not found.");
             item.RecipeId = request.RecipeId.Value;
         }
 
