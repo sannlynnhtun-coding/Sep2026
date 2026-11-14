@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../Sep2026.WaiYanLin.ReaderClub.WebApi/Sep2026.WaiYanLin.ReaderClub.WebApi.csproj" />
+  <Project Path="Sep2026.WaiYanLin.ReaderClub.Database.csproj" />
+</Solution>
