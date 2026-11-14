@@ -1,0 +1,1 @@
+Database access defaults to Windows integrated authentication against local SQL Server. Override with the `ConnectionStrings__DefaultConnection` environment variable; keep credentials outside source control. Rotate any previously exposed database credentials.
