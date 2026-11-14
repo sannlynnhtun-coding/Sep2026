@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Sep2026.RecipeAndPantryFinder.Services;
 
@@ -15,7 +16,7 @@ public class RecipeController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetRecipes([FromQuery] string? query, [FromQuery] int? number)
+    public async Task<IActionResult> GetRecipes([FromQuery] string? query, [FromQuery, Range(1, 100)] int? number)
     {
         int n = number is null or <= 0 ? 10 : number.Value;
         var recipes = await _recipeService.GetRecipesAsync(query, n);

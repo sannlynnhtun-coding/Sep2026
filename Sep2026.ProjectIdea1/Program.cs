@@ -6,43 +6,28 @@ using System.Text.Json;
 
 Console.WriteLine("Hello, World!");
 
-string jsonContent = File.ReadAllText("C:\\Users\\Sann Lynn Htun\\Downloads\\MinTheinKha.LatHtaukBayDin.json");
+string jsonContent = File.ReadAllText(args.Length == 1 ? args[0] : "C:\\Users\\Sann Lynn Htun\\Downloads\\MinTheinKha.LatHtaukBayDin.json");
 
 QuestionAnswerResponseModel responseModel = JsonSerializer.Deserialize<QuestionAnswerResponseModel>(jsonContent)!;
 
 SqlConnectionStringBuilder connectionStringBuilder = new SqlConnectionStringBuilder(
     Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
     ?? "Server=.;Database=Sep2026Db;Integrated Security=True;TrustServerCertificate=True;");
-IDbConnection connection = new SqlConnection(connectionStringBuilder.ConnectionString);
+using IDbConnection connection = new SqlConnection(connectionStringBuilder.ConnectionString);
 connection.Open();
-
-//for (int i = 0; i < responseModel.questions.Length; i++)
-//{
-//    var item = responseModel.questions[i];
-//    string query = $@"
-//INSERT INTO [dbo].[Project1Question]
-//           ([QuestionId]
-//           ,[QuestionNo]
-//           ,[QuestionName])
-//     VALUES
-//           ({item.questionNo}
-//           ,{item.questionNo}
-//           ,N'{item.questionName}')";
-//    connection.Execute(query);
-//}
 
 for (int i = 0; i < responseModel.answers.Length; i++)
 {
     var item = responseModel.answers[i];
-    string query = $@"INSERT INTO [dbo].[Project1Answer]
+    string query = @"INSERT INTO [dbo].[Project1Answer]
            ([QuestionId]
            ,[AnswerNo]
            ,[AnswerResult])
      VALUES
-           ('{item.questionNo}'
-           ,'{item.answerNo}'
-           ,N'{item.answerResult}')";
-    connection.Execute(query);
+           (@questionNo
+           ,@answerNo
+           ,@answerResult)";
+    connection.Execute(query, new { item.questionNo, item.answerNo, item.answerResult });
 }
 
 connection.Close();

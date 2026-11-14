@@ -24,7 +24,12 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+    app.UseExceptionHandler();
 
 // Swagger UI
 if (app.Environment.IsDevelopment())

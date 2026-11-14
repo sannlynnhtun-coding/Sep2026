@@ -31,7 +31,10 @@ public class RecipeService : IRecipeService
             throw new Exception("Configure Spoonacular__BaseUrl and Spoonacular__ApiKey in the environment or another configuration provider.");
         }
 
-        return (baseUrl, apiKey);
+        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var endpoint) || endpoint.Scheme != Uri.UriSchemeHttps)
+            throw new InvalidOperationException("Spoonacular BaseUrl must use HTTPS.");
+
+        return (baseUrl.TrimEnd('/'), apiKey);
     }
 
     public async Task<List<RecipeResponseModel>> GetRecipesAsync(string? query, int number)
@@ -43,13 +46,13 @@ public class RecipeService : IRecipeService
         {
             url += $"&query={Uri.EscapeDataString(query)}";
         }
-        url += $"&apiKey={apiKey}";
 
-        var response = await _httpClient.GetAsync(url);
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("x-api-key", apiKey);
+        using var response = await _httpClient.SendAsync(request);
         if (!response.IsSuccessStatusCode)
         {
-            var body = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Spoonacular search failed ({response.StatusCode}): {body}");
+            throw new HttpRequestException($"Spoonacular search failed with HTTP {(int)response.StatusCode}.");
         }
 
         var json = await response.Content.ReadAsStringAsync();
@@ -83,17 +86,18 @@ public class RecipeService : IRecipeService
     private async Task<string?> FetchRecipeInfoJsonAsync(int id)
     {
         var (baseUrl, apiKey) = GetConfig();
-        var url = $"{baseUrl}/recipes/{id}/information?apiKey={apiKey}";
+        var url = $"{baseUrl}/recipes/{id}/information";
 
-        var response = await _httpClient.GetAsync(url);
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("x-api-key", apiKey);
+        using var response = await _httpClient.SendAsync(request);
         if (response.StatusCode == HttpStatusCode.NotFound)
         {
             return null;
         }
         if (!response.IsSuccessStatusCode)
         {
-            var body = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Spoonacular recipe info failed ({response.StatusCode}): {body}");
+            throw new HttpRequestException($"Spoonacular recipe info failed with HTTP {(int)response.StatusCode}.");
         }
 
         return await response.Content.ReadAsStringAsync();
@@ -155,13 +159,14 @@ public class RecipeService : IRecipeService
         var (baseUrl, apiKey) = GetConfig();
 
         var ingredients = string.Join(",", pantryItems.Select(p => Uri.EscapeDataString(p.ItemName.Trim())));
-        var url = $"{baseUrl}/recipes/findByIngredients?ingredients={ingredients}&number=&apiKey={apiKey}";
+        var url = $"{baseUrl}/recipes/findByIngredients?ingredients={ingredients}&number=10";
 
-        var response = await _httpClient.GetAsync(url);
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("x-api-key", apiKey);
+        using var response = await _httpClient.SendAsync(request);
         if (!response.IsSuccessStatusCode)
         {
-            var body = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Spoonacular findByIngredients failed ({response.StatusCode}): {body}");
+            throw new HttpRequestException($"Spoonacular findByIngredients failed with HTTP {(int)response.StatusCode}.");
         }
 
         var json = await response.Content.ReadAsStringAsync();

@@ -16,8 +16,11 @@ namespace Sep2026.ClinicPatientRecord.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> TestConnection()
+        public async Task<IActionResult> TestConnection([FromServices] IWebHostEnvironment environment)
         {
+            if (!environment.IsDevelopment())
+                return NotFound();
+
             try
             {
                 await using SqlConnection connection =
@@ -38,13 +41,12 @@ namespace Sep2026.ClinicPatientRecord.API.Controllers
                     Database = databaseName
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, new
                 {
                     Success = false,
-                    Message = "Database connection failed.",
-                    Error = ex.Message
+                    Message = "Database connection failed."
                 });
             }
         }
